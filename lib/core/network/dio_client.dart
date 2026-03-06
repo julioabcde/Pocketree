@@ -5,17 +5,19 @@ import 'package:pocketree/core/storage/token_storage.dart';
 
 class DioClient {
   static Dio create({required TokenStorage tokenStorage}) {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: AppConfig.getBaseUrl(),
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
+    final baseOptions = BaseOptions(
+      baseUrl: AppConfig.getBaseUrl(),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
     );
+
+    final dio = Dio(baseOptions);
+    
+    final refreshDio = Dio(baseOptions);
 
     if (AppConfig.enableLogging) {
       dio.interceptors.add(
@@ -31,7 +33,7 @@ class DioClient {
     }
 
     dio.interceptors.add(
-      AuthInterceptor(tokenStorage: tokenStorage, dio: dio),
+      AuthInterceptor(tokenStorage: tokenStorage, refreshDio: refreshDio, dio: dio),
     );
 
     return dio;

@@ -3,9 +3,19 @@ import 'package:pocketree/core/storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
   final TokenStorage tokenStorage;
-  final Dio dio;
 
-  AuthInterceptor({required this.tokenStorage, required this.dio});
+  /// Used only for POST /auth/refresh — has NO interceptors to avoid recursive loops.
+  final Dio _refreshDio;
+
+  /// The main Dio instance (with interceptors) used to retry the original request.
+  final Dio _dio;
+
+  AuthInterceptor({
+    required this.tokenStorage,
+    required Dio refreshDio,
+    required Dio dio,
+  })  : _refreshDio = refreshDio,
+        _dio = dio;
 
   @override
   Future<void> onRequest(
@@ -24,14 +34,18 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
+    if (err.requestOptions.extra['retried'] == true) {
+      await tokenStorage.clearTokens();
+      return handler.next(err);
+    }
+
     if (err.response?.statusCode == 401) {
       final refreshToken = await tokenStorage.getRefreshToken();
       if (refreshToken != null) {
         try {
-          final response = await dio.post(
+          final response = await _refreshDio.post(
             '/auth/refresh',
             data: {'refresh_token': refreshToken},
-            options: Options(headers: {'Authorization': null}),
           );
           final newAccessToken = response.data['access_token'] as String;
           final newRefreshToken = response.data['refresh_token'] as String;
@@ -39,9 +53,19 @@ class AuthInterceptor extends Interceptor {
             accessToken: newAccessToken,
             refreshToken: newRefreshToken,
           );
-          final retryOptions = err.requestOptions;
-          retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-          final retryResponse = await dio.fetch(retryOptions);
+          final retryResponse = await _dio.request(
+            err.requestOptions.path,
+            data: err.requestOptions.data,
+            queryParameters: err.requestOptions.queryParameters,
+            options: Options(
+              method: err.requestOptions.method,
+              headers: {
+                ...err.requestOptions.headers,
+                'Authorization': 'Bearer $newAccessToken',
+              },
+              extra: {...err.requestOptions.extra, 'retried': true},
+            ),
+          );
           return handler.resolve(retryResponse);
         } catch (_) {
           await tokenStorage.clearTokens();
