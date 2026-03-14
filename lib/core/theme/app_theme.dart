@@ -17,24 +17,58 @@ abstract class AppTheme {
         onError: AppColors.white,
       ),
       textTheme: const TextTheme(
-        displayLarge: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w700),
-        displayMedium: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w700),
-        displaySmall: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w700),
-        headlineLarge: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w700),
-        headlineMedium: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w700),
-        headlineSmall: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(color: AppColors.brownEspresso, fontWeight: FontWeight.w500),
-        titleSmall: TextStyle(color: AppColors.brownDriftwood, fontWeight: FontWeight.w500),
+        displayLarge: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w700,
+        ),
+        displayMedium: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w700,
+        ),
+        displaySmall: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w700,
+        ),
+        headlineLarge: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w700,
+        ),
+        headlineMedium: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w700,
+        ),
+        headlineSmall: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: TextStyle(
+          color: AppColors.brownEspresso,
+          fontWeight: FontWeight.w500,
+        ),
+        titleSmall: TextStyle(
+          color: AppColors.brownDriftwood,
+          fontWeight: FontWeight.w500,
+        ),
         bodyLarge: TextStyle(color: AppColors.brownDriftwood),
         bodyMedium: TextStyle(color: AppColors.brownDriftwood),
         bodySmall: TextStyle(color: AppColors.brownMocha),
-        labelLarge: TextStyle(color: AppColors.white, fontWeight: FontWeight.w600, fontSize: 16),
+        labelLarge: TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.neutralSand,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -45,7 +79,10 @@ abstract class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryForest, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.primaryForest,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

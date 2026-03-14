@@ -2,6 +2,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:pocketree/core/network/dio_client.dart';
 import 'package:pocketree/core/storage/token_storage.dart';
+import 'package:pocketree/features/accounts/data/datasources/account_remote_datasource.dart';
+import 'package:pocketree/features/accounts/data/repositories/account_repository_impl.dart';
+import 'package:pocketree/features/accounts/domain/repositories/account_repository.dart';
+import 'package:pocketree/features/accounts/domain/usecases/create_account_usecase.dart';
+import 'package:pocketree/features/accounts/domain/usecases/delete_account_usecase.dart';
+import 'package:pocketree/features/accounts/domain/usecases/get_account_by_id_usecase.dart';
+import 'package:pocketree/features/accounts/domain/usecases/get_account_summary_usecase.dart';
+import 'package:pocketree/features/accounts/domain/usecases/get_accounts_usecase.dart';
+import 'package:pocketree/features/accounts/domain/usecases/update_account_usecase.dart';
 import 'package:pocketree/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:pocketree/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:pocketree/features/auth/domain/repositories/auth_repository.dart';
@@ -27,10 +36,16 @@ Future<void> setupDependencies() async {
   sl.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceImpl(sl()),
   );
+  sl.registerLazySingleton<AccountRemoteDatasource>(
+    () => AccountRemoteDatasourceImpl(sl()),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl()),
+  );
+  sl.registerLazySingleton<AccountRepository>(
+    () => AccountRepositoryImpl(sl()),
   );
 
   // Use cases
@@ -38,6 +53,13 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => LogOutUseCase(sl()));
   sl.registerFactory(() => RegisterUseCase(sl()));
   sl.registerFactory(() => GetCurrentUserUseCase(sl()));
+
+  sl.registerFactory(() => GetAccountsUseCase(sl()));
+  sl.registerFactory(() => GetAccountSummaryUseCase(sl()));
+  sl.registerFactory(() => GetAccountByIdUseCase(sl()));
+  sl.registerFactory(() => CreateAccountUseCase(sl()));
+  sl.registerFactory(() => UpdateAccountUseCase(sl()));
+  sl.registerFactory(() => DeleteAccountUseCase(sl()));
 
   // BLoC
   sl.registerFactory(
