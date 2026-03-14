@@ -1,3 +1,5 @@
+import 'package:dartz/dartz.dart';
+import 'package:pocketree/core/error/failures.dart';
 import 'package:pocketree/features/auth/domain/repositories/auth_repository.dart';
 
 class LogOutUseCase {
@@ -5,7 +7,7 @@ class LogOutUseCase {
 
   LogOutUseCase(this.repository);
 
-  Future<void> call() {
+  Future<Either<Failure, void>> call() {
     return repository.logout();
   }
 }

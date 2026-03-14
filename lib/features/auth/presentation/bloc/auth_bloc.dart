@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pocketree/core/error/failures.dart';
 import 'package:pocketree/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:pocketree/features/auth/domain/usecases/log_in_usecase.dart';
 import 'package:pocketree/features/auth/domain/usecases/log_out_usecase.dart';
@@ -28,12 +29,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCheckStatusRequested event,
     Emitter<AuthState> emit,
   ) async {
-    try {
-      final user = await getCurrentUser();
-      emit(AuthAuthenticated(user));
-    } catch (_) {
-      emit(const AuthUnauthenticated());
-    }
+    final result = await getCurrentUser();
+    result.fold(
+      (_) => emit(const AuthUnauthenticated()),
+      (user) => emit(AuthAuthenticated(user)),
+    );
   }
 
   Future<void> _onLogin(
@@ -41,12 +41,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      final user = await logIn(email: event.email, password: event.password);
-      emit(AuthAuthenticated(user));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+    final result = await logIn(email: event.email, password: event.password);
+    result.fold(
+      (failure) => emit(AuthError(_mapFailureToMessage(failure))),
+      (user) => emit(AuthAuthenticated(user)),
+    );
   }
 
   Future<void> _onRegister(
@@ -54,16 +53,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      final user = await register(
-        name: event.name,
-        email: event.email,
-        password: event.password,
-      );
-      emit(AuthAuthenticated(user));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
+    final result = await register(
+      name: event.name,
+      email: event.email,
+      password: event.password,
+    );
+    result.fold(
+      (failure) => emit(AuthError(_mapFailureToMessage(failure))),
+      (user) => emit(AuthAuthenticated(user)),
+    );
   }
 
   Future<void> _onLogout(
@@ -71,11 +69,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    try {
-      await logOut();
-    } catch (_) {
-      // Clear local session even if server call fails
-    }
-    emit(const AuthUnauthenticated());
+    final result = await logOut();
+    result.fold(
+      (_) => emit(const AuthUnauthenticated()),
+      (_) => emit(const AuthUnauthenticated()),
+    );
+  }
+
+  String _mapFailureToMessage(Failure failure) {
+    return switch (failure) {
+      ServerFailure f => f.message,
+      NetworkFailure _ => 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      UnauthorizedFailure _ => failure.message,
+      CacheFailure _ => 'Terjadi kesalahan lokal. Silakan coba lagi.',
+    };
   }
 }
