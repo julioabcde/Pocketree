@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_state.dart';
 import 'package:pocketree/features/auth/presentation/screens/auth_screen.dart';
-import 'package:pocketree/features/auth/presentation/screens/dashboard_screen.dart';
 
 GoRouter createRouter(AuthBloc authBloc) {
   return GoRouter(
@@ -22,21 +21,9 @@ GoRouter createRouter(AuthBloc authBloc) {
       return null;
     },
     routes: [
-      // GoRoute(
-      //   path: '/login',
-      //   builder: (context, state) => const LoginScreen(),
-      // ),
-      // GoRoute(
-      //   path: '/register',
-      //   builder: (context, state) => const RegisterScreen(),
-      // ),
       GoRoute(
         path: '/auth',
         builder: (context, state) => const AuthScreen(),
-      ),
-      GoRoute(
-        path: '/dashboard',
-        builder: (context, state) => const DashboardScreen(),
       ),
     ],
   );
