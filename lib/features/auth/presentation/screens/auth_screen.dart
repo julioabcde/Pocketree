@@ -53,10 +53,12 @@ class _AuthScreenState extends State<AuthScreen> {
   final _registerPasswordFocusNode = FocusNode();
   final _registerConfirmPasswordFocusNode = FocusNode();
 
-  bool _obscurePassword = true;
+  bool _loginObscurePassword = true;
+  bool _registerObscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  bool _hasSubmitted = false;
+  bool _loginHasSubmitted = false;
+  bool _registerHasSubmitted = false;
 
   @override
   void initState() {
@@ -86,9 +88,6 @@ class _AuthScreenState extends State<AuthScreen> {
     if (tab == _currentTab) return;
     setState(() {
       _currentTab = tab;
-      _hasSubmitted = false;
-      _obscurePassword = true;
-      _obscureConfirmPassword = true;
     });
     FocusScope.of(context).unfocus();
     _pageController.animateToPage(
@@ -99,7 +98,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   String? _validateEmail(String? value) {
-    if (!_hasSubmitted) return null;
     if (value == null || value.trim().isEmpty) return 'Email is required';
     final emailRegex = RegExp(r'^[\w\-.]+@([\w-\+]+\.)+[\w-]{2,}$');
     if (!emailRegex.hasMatch(value.trim())) {
@@ -109,7 +107,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   String? _validatePassword(String? value) {
-    if (!_hasSubmitted) return null;
     if (value == null || value.trim().isEmpty) return 'Password is required';
     final passwordRegex = RegExp(
       r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$',
@@ -121,7 +118,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   String? _validateConfirmPassword(String? value) {
-    if (!_hasSubmitted) return null;
     if (value == null || value.trim().isEmpty) {
       return 'Please confirm your password';
     }
@@ -148,7 +144,7 @@ class _AuthScreenState extends State<AuthScreen> {
   // └── if (false) → BLoC event NOT dispatched
 
   void _submitLogin() {
-    setState(() => _hasSubmitted = true);
+    setState(() => _loginHasSubmitted = true);
     if (_loginFormKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
         AuthLoginRequested(
@@ -160,7 +156,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _submitRegister() {
-    setState(() => _hasSubmitted = true);
+    setState(() => _registerHasSubmitted = true);
     if (_registerFormKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
         AuthRegisterRequested(
@@ -376,10 +372,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                       focusNode: _loginEmailFocusNode,
                                       keyboardType: TextInputType.emailAddress,
                                       textInputAction: TextInputAction.next,
-                                      autovalidateMode: _hasSubmitted
+                                      autovalidateMode: _loginHasSubmitted
                                           ? AutovalidateMode.onUserInteraction
                                           : AutovalidateMode.disabled,
-                                      validator: _validateEmail,
+                                      validator: (v) =>
+                                          _loginHasSubmitted ? _validateEmail(v) : null,
                                       onFieldSubmitted: (_) =>
                                           _loginPasswordFocusNode
                                               .requestFocus(),
@@ -400,26 +397,27 @@ class _AuthScreenState extends State<AuthScreen> {
                                     TextFormField(
                                       controller: _loginPasswordController,
                                       focusNode: _loginPasswordFocusNode,
-                                      obscureText: _obscurePassword,
+                                      obscureText: _loginObscurePassword,
                                       textInputAction: TextInputAction.done,
-                                      autovalidateMode: _hasSubmitted
+                                      autovalidateMode: _loginHasSubmitted
                                           ? AutovalidateMode.onUserInteraction
                                           : AutovalidateMode.disabled,
-                                      validator: _validatePassword,
+                                      validator: (v) =>
+                                          _loginHasSubmitted ? _validatePassword(v) : null,
                                       onFieldSubmitted: (_) => _submitLogin(),
                                       decoration: InputDecoration(
                                         hintText: '••••••••',
                                         suffixIcon: IconButton(
                                           icon: Icon(
-                                            _obscurePassword
+                                            _loginObscurePassword
                                                 ? Icons.visibility_off_outlined
                                                 : Icons.visibility_outlined,
                                             size: 20,
                                             color: AppColors.brownMocha,
                                           ),
                                           onPressed: () => setState(
-                                            () => _obscurePassword =
-                                                !_obscurePassword,
+                                            () => _loginObscurePassword =
+                                                !_loginObscurePassword,
                                           ),
                                         ),
                                       ),
@@ -531,11 +529,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                       textCapitalization:
                                           TextCapitalization.words,
                                       textInputAction: TextInputAction.next,
-                                      autovalidateMode: _hasSubmitted
+                                      autovalidateMode: _registerHasSubmitted
                                           ? AutovalidateMode.onUserInteraction
                                           : AutovalidateMode.disabled,
                                       validator: (value) {
-                                        if (!_hasSubmitted) return null;
+                                        if (!_registerHasSubmitted) return null;
                                         if (value == null ||
                                             value.trim().isEmpty) {
                                           return 'Username is required';
@@ -572,10 +570,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                       focusNode: _registerEmailFocusNode,
                                       keyboardType: TextInputType.emailAddress,
                                       textInputAction: TextInputAction.next,
-                                      autovalidateMode: _hasSubmitted
+                                      autovalidateMode: _registerHasSubmitted
                                           ? AutovalidateMode.onUserInteraction
                                           : AutovalidateMode.disabled,
-                                      validator: _validateEmail,
+                                      validator: (v) =>
+                                          _registerHasSubmitted ? _validateEmail(v) : null,
                                       onFieldSubmitted: (_) =>
                                           _registerPasswordFocusNode
                                               .requestFocus(),
@@ -596,12 +595,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                     TextFormField(
                                       controller: _registerPasswordController,
                                       focusNode: _registerPasswordFocusNode,
-                                      obscureText: _obscurePassword,
+                                      obscureText: _registerObscurePassword,
                                       textInputAction: TextInputAction.next,
-                                      autovalidateMode: _hasSubmitted
+                                      autovalidateMode: _registerHasSubmitted
                                           ? AutovalidateMode.onUserInteraction
                                           : AutovalidateMode.disabled,
-                                      validator: _validatePassword,
+                                      validator: (v) =>
+                                          _registerHasSubmitted ? _validatePassword(v) : null,
                                       onFieldSubmitted: (_) =>
                                           _registerConfirmPasswordFocusNode
                                               .requestFocus(),
@@ -609,15 +609,15 @@ class _AuthScreenState extends State<AuthScreen> {
                                         hintText: '••••••••',
                                         suffixIcon: IconButton(
                                           icon: Icon(
-                                            _obscurePassword
+                                            _registerObscurePassword
                                                 ? Icons.visibility_off_outlined
                                                 : Icons.visibility_outlined,
                                             size: 20,
                                             color: AppColors.brownMocha,
                                           ),
                                           onPressed: () => setState(
-                                            () => _obscurePassword =
-                                                !_obscurePassword,
+                                            () => _registerObscurePassword =
+                                                !_registerObscurePassword,
                                           ),
                                         ),
                                       ),
@@ -639,10 +639,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                           _registerConfirmPasswordFocusNode,
                                       obscureText: _obscureConfirmPassword,
                                       textInputAction: TextInputAction.done,
-                                      autovalidateMode: _hasSubmitted
+                                      autovalidateMode: _registerHasSubmitted
                                           ? AutovalidateMode.onUserInteraction
                                           : AutovalidateMode.disabled,
-                                      validator: _validateConfirmPassword,
+                                      validator: (v) =>
+                                          _registerHasSubmitted ? _validateConfirmPassword(v) : null,
                                       onFieldSubmitted: (_) =>
                                           _submitRegister(),
                                       decoration: InputDecoration(
