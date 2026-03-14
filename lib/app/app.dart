@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pocketree/app/routes.dart';
 import 'package:pocketree/core/di/injection_container.dart';
+import 'package:pocketree/core/theme/app_theme.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_event.dart';
 
@@ -36,6 +37,7 @@ class _PocketreeAppState extends State<PocketreeApp> {
           final router = createRouter(_authBloc);
           return MaterialApp.router(
             title: 'Pocketree',
+            theme: AppTheme.light,
             routerConfig: router,
           );
         },

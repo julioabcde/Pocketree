@@ -5,33 +5,34 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_state.dart';
+import 'package:pocketree/features/auth/presentation/screens/auth_screen.dart';
 import 'package:pocketree/features/auth/presentation/screens/dashboard_screen.dart';
-import 'package:pocketree/features/auth/presentation/screens/login_screen.dart';
-import 'package:pocketree/features/auth/presentation/screens/register_screen.dart';
 
 GoRouter createRouter(AuthBloc authBloc) {
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/auth',
     refreshListenable: _GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
       final authState = context.read<AuthBloc>().state;
       final isAuthenticated = authState is AuthAuthenticated;
-      final isOnAuthRoute =
-          state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register';
+      final isOnAuthRoute = state.matchedLocation == '/auth';
 
-      if (!isAuthenticated && !isOnAuthRoute) return '/login';
+      if (!isAuthenticated && !isOnAuthRoute) return '/auth';
       if (isAuthenticated && isOnAuthRoute) return '/dashboard';
       return null;
     },
     routes: [
+      // GoRoute(
+      //   path: '/login',
+      //   builder: (context, state) => const LoginScreen(),
+      // ),
+      // GoRoute(
+      //   path: '/register',
+      //   builder: (context, state) => const RegisterScreen(),
+      // ),
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        path: '/auth',
+        builder: (context, state) => const AuthScreen(),
       ),
       GoRoute(
         path: '/dashboard',
