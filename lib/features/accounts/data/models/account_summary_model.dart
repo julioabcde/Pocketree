@@ -15,10 +15,10 @@ class AccountSummaryModel {
 
   factory AccountSummaryModel.fromJson(Map<String, dynamic> json) {
     return AccountSummaryModel(
-      totalAssets: double.parse(json['totalAssets'] as String),
-      totalLiabilities: double.parse(json['totalLiabilities'] as String),
-      netWorth: double.parse(json['netWorth'] as String),
-      accountsCount: json['accountsCount'] as int,
+      totalAssets: double.parse(json['total_assets'] as String),
+      totalLiabilities: double.parse(json['total_liabilities'] as String),
+      netWorth: double.parse(json['net_worth'] as String),
+      accountsCount: json['accounts_count'] as int,
     );
   }
 
