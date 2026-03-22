@@ -174,7 +174,7 @@ class _AuthScreenState extends State<AuthScreen> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            context.go('/dashboard');
+            context.go('/home');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
