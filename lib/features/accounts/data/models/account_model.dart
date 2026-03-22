@@ -26,9 +26,9 @@ class AccountModel{
       name: json['name'] as String,
       type: AccountType.fromString(json['type'] as String),
       balance: double.parse(json['balance'] as String),
-      initialBalance: double.parse(json['initialBalance'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      initialBalance: double.parse(json['initial_balance'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
