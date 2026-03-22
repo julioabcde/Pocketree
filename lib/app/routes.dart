@@ -12,6 +12,7 @@ import 'package:pocketree/features/transactions/presentation/screens/transaction
 import 'package:pocketree/features/splitbill/presentation/screens/splitbill_screen.dart';
 import 'package:pocketree/features/reports/presentation/screens/reports_screen.dart';
 import 'package:pocketree/features/settings/presentation/screens/settings_screen.dart';
+import 'package:pocketree/features/accounts/presentation/screens/accounts_screen.dart';
 
 GoRouter createRouter(AuthBloc authBloc) {
   return GoRouter(
@@ -19,37 +20,30 @@ GoRouter createRouter(AuthBloc authBloc) {
     refreshListenable: _GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
       final authState = context.read<AuthBloc>().state;
-
-      if (authState is AuthInitial || authState is AuthLoading) return null;
-
       final isAuthenticated = authState is AuthAuthenticated;
       final isOnAuthRoute = state.matchedLocation == '/auth';
 
+      if (authState is AuthLoading || authState is AuthInitial) return null;
       if (!isAuthenticated && !isOnAuthRoute) return '/auth';
       if (isAuthenticated && isOnAuthRoute) return '/home';
       return null;
     },
     routes: [
-      // Auth — standalone, no nav bar
-      GoRoute(
-        path: '/auth',
-        builder: (context, state) => const AuthScreen(),
-      ),
-
-      // Split Bill — standalone modal action, no nav bar
+      GoRoute(path: '/auth', builder: (context, state) => const AuthScreen()),
       GoRoute(
         path: '/splitbill',
         builder: (context, state) => const SplitbillScreen(),
       ),
-
-      // Main app shell — 4 branches with persistent bottom nav
-      // Branch order MUST match visual tab order in MainShell
+      GoRoute(
+        path: '/accounts',
+        builder: (context, state) => const AccountsScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
         },
         branches: [
-          // Index 0 — Home
+          // Home
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -59,7 +53,7 @@ GoRouter createRouter(AuthBloc authBloc) {
             ],
           ),
 
-          // Index 1 — Transactions
+          // Transactions
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -69,7 +63,7 @@ GoRouter createRouter(AuthBloc authBloc) {
             ],
           ),
 
-          // Index 2 — Reports
+          // Reports
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -79,7 +73,7 @@ GoRouter createRouter(AuthBloc authBloc) {
             ],
           ),
 
-          // Index 3 — Settings
+          // Settings
           StatefulShellBranch(
             routes: [
               GoRoute(

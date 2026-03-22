@@ -11,6 +11,7 @@ import 'package:pocketree/features/accounts/domain/usecases/get_account_by_id_us
 import 'package:pocketree/features/accounts/domain/usecases/get_account_summary_usecase.dart';
 import 'package:pocketree/features/accounts/domain/usecases/get_accounts_usecase.dart';
 import 'package:pocketree/features/accounts/domain/usecases/update_account_usecase.dart';
+import 'package:pocketree/features/accounts/presentation/bloc/account_bloc.dart';
 import 'package:pocketree/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:pocketree/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:pocketree/features/auth/domain/repositories/auth_repository.dart';
@@ -19,6 +20,8 @@ import 'package:pocketree/features/auth/domain/usecases/log_in_usecase.dart';
 import 'package:pocketree/features/auth/domain/usecases/log_out_usecase.dart';
 import 'package:pocketree/features/auth/domain/usecases/register_usecase.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:pocketree/features/home/domain/usecases/get_home_data_usecase.dart';
+import 'package:pocketree/features/home/presentation/bloc/home_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -61,6 +64,8 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => UpdateAccountUseCase(sl()));
   sl.registerFactory(() => DeleteAccountUseCase(sl()));
 
+  sl.registerFactory(() => GetHomeDataUseCase(sl()));
+
   // BLoC
   sl.registerFactory(
     () => AuthBloc(
@@ -70,4 +75,17 @@ Future<void> setupDependencies() async {
       getCurrentUser: sl(),
     ),
   );
+
+  // BLoC
+  sl.registerFactory(
+    () => AccountBloc(
+      getAccounts: sl(),
+      getAccountSummary: sl(),
+      createAccount: sl(),
+      updateAccount: sl(),
+      deleteAccount: sl(),
+    ),
+  );
+
+  sl.registerFactory(() => HomeBloc(getHomeData: sl()));
 }
