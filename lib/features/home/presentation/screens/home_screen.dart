@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
 import 'package:pocketree/features/home/presentation/bloc/home_bloc.dart';
 import 'package:pocketree/features/home/presentation/bloc/home_event.dart';
@@ -46,6 +47,33 @@ class _HomeViewState extends State<_HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: Container(
+        height: 56,
+        width: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.brownEspresso,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.brownEspresso.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          heroTag: 'addTransaction',
+          onPressed: () => GoRouter.of(context).push('/add-transaction'),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          shape: const CircleBorder(),
+          child: const Icon(
+            Icons.add_rounded,
+            color: AppColors.white,
+            size: 28,
+          ),
+        ),
+      ),
       body: BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
           if (state is HomeLoading || state is HomeInitial) {

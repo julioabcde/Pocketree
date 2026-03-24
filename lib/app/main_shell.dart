@@ -28,6 +28,7 @@ class MainShell extends StatelessWidget {
           ],
         ),
         child: FloatingActionButton(
+          heroTag: 'splitbill',
           onPressed: () => GoRouter.of(context).push('/splitbill'),
           elevation: 0,
           backgroundColor: Colors.transparent,

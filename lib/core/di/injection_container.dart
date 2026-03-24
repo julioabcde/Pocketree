@@ -1,3 +1,5 @@
+// lib/core/di/injection_container.dart
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:pocketree/core/network/dio_client.dart';
@@ -20,8 +22,28 @@ import 'package:pocketree/features/auth/domain/usecases/log_in_usecase.dart';
 import 'package:pocketree/features/auth/domain/usecases/log_out_usecase.dart';
 import 'package:pocketree/features/auth/domain/usecases/register_usecase.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:pocketree/features/categories/data/datasources/category_remote_datasource.dart';
+import 'package:pocketree/features/categories/data/repositories/category_repository_impl.dart';
+import 'package:pocketree/features/categories/domain/repositories/category_repository.dart';
+import 'package:pocketree/features/categories/domain/usecases/create_category_usecase.dart';
+import 'package:pocketree/features/categories/domain/usecases/delete_category_usecase.dart';
+import 'package:pocketree/features/categories/domain/usecases/get_categories_usecase.dart';
+import 'package:pocketree/features/categories/domain/usecases/get_category_by_id_usecase.dart';
+import 'package:pocketree/features/categories/domain/usecases/update_category_usecase.dart';
+import 'package:pocketree/features/categories/presentation/bloc/category_bloc.dart';
 import 'package:pocketree/features/home/domain/usecases/get_home_data_usecase.dart';
 import 'package:pocketree/features/home/presentation/bloc/home_bloc.dart';
+import 'package:pocketree/features/transactions/data/datasources/transaction_remote_datasource.dart';
+import 'package:pocketree/features/transactions/data/repositories/transaction_repository_impl.dart';
+import 'package:pocketree/features/transactions/domain/repositories/transaction_repository.dart';
+import 'package:pocketree/features/transactions/domain/usecases/create_transaction_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/create_transfer_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/delete_transaction_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/get_transaction_by_id_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/get_transaction_summary_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/get_transactions_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/update_transaction_usecase.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -35,23 +57,35 @@ Future<void> setupDependencies() async {
   // Network
   sl.registerLazySingleton(() => DioClient.create(tokenStorage: sl()));
 
-  // Datasources
+  //  Datasources 
   sl.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceImpl(sl()),
   );
   sl.registerLazySingleton<AccountRemoteDatasource>(
     () => AccountRemoteDatasourceImpl(sl()),
   );
+  sl.registerLazySingleton<CategoryRemoteDatasource>(
+    () => CategoryRemoteDatasourceImpl(sl()),
+  );
+  sl.registerLazySingleton<TransactionRemoteDatasource>(
+    () => TransactionRemoteDatasourceImpl(sl()),
+  );
 
-  // Repositories
+  //  Repositories 
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl()),
   );
   sl.registerLazySingleton<AccountRepository>(
     () => AccountRepositoryImpl(sl()),
   );
+  sl.registerLazySingleton<CategoryRepository>(
+    () => CategoryRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<TransactionRepository>(
+    () => TransactionRepositoryImpl(sl()),
+  );
 
-  // Use cases
+  //  Use Cases 
   sl.registerFactory(() => LogInUseCase(sl()));
   sl.registerFactory(() => LogOutUseCase(sl()));
   sl.registerFactory(() => RegisterUseCase(sl()));
@@ -64,9 +98,23 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => UpdateAccountUseCase(sl()));
   sl.registerFactory(() => DeleteAccountUseCase(sl()));
 
+  sl.registerFactory(() => GetCategoriesUseCase(sl()));
+  sl.registerFactory(() => GetCategoryByIdUseCase(sl()));
+  sl.registerFactory(() => CreateCategoryUseCase(sl()));
+  sl.registerFactory(() => UpdateCategoryUseCase(sl()));
+  sl.registerFactory(() => DeleteCategoryUseCase(sl()));
+
+  sl.registerFactory(() => GetTransactionsUseCase(sl()));
+  sl.registerFactory(() => GetTransactionByIdUseCase(sl()));
+  sl.registerFactory(() => GetTransactionSummaryUseCase(sl()));
+  sl.registerFactory(() => CreateTransactionUseCase(sl()));
+  sl.registerFactory(() => CreateTransferUseCase(sl()));
+  sl.registerFactory(() => UpdateTransactionUseCase(sl()));
+  sl.registerFactory(() => DeleteTransactionUseCase(sl()));
+
   sl.registerFactory(() => GetHomeDataUseCase(sl()));
 
-  // BLoC
+  //  BLoCs 
   sl.registerFactory(
     () => AuthBloc(
       logIn: sl(),
@@ -76,7 +124,6 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // BLoC
   sl.registerFactory(
     () => AccountBloc(
       getAccounts: sl(),
@@ -84,6 +131,26 @@ Future<void> setupDependencies() async {
       createAccount: sl(),
       updateAccount: sl(),
       deleteAccount: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => CategoryBloc(
+      getCategories: sl(),
+      createCategory: sl(),
+      updateCategory: sl(),
+      deleteCategory: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => TransactionBloc(
+      getTransactions: sl(),
+      getTransactionSummary: sl(),
+      createTransaction: sl(),
+      updateTransaction: sl(),
+      deleteTransaction: sl(),
+      createTransfer: sl(),
     ),
   );
 
