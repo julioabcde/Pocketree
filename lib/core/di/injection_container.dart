@@ -112,7 +112,7 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => UpdateTransactionUseCase(sl()));
   sl.registerFactory(() => DeleteTransactionUseCase(sl()));
 
-  sl.registerFactory(() => GetHomeDataUseCase(sl()));
+  sl.registerFactory(() => GetHomeDataUseCase(sl(), sl()));
 
   //  BLoCs 
   sl.registerFactory(

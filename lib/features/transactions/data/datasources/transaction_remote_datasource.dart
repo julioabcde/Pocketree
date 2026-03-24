@@ -39,6 +39,7 @@ abstract class TransactionRemoteDatasource {
 
   Future<TransactionModel> updateTransaction({
     required int transactionId,
+    int? accountId,
     int? categoryId,
     double? amount,
     DateTime? date,
@@ -163,6 +164,7 @@ class TransactionRemoteDatasourceImpl implements TransactionRemoteDatasource {
   @override
   Future<TransactionModel> updateTransaction({
     required int transactionId,
+    int? accountId,
     int? categoryId,
     double? amount,
     DateTime? date,
@@ -171,6 +173,7 @@ class TransactionRemoteDatasourceImpl implements TransactionRemoteDatasource {
     try {
       final data = <String, dynamic>{};
 
+      if (accountId != null) data['account_id'] = accountId;
       if (categoryId != null) data['category_id'] = categoryId;
       if (amount != null) data['amount'] = amount.toStringAsFixed(2);
       if (date != null) data['date'] = _dateFormat.format(date);

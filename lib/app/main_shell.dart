@@ -18,7 +18,7 @@ class MainShell extends StatelessWidget {
         width: 60,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: AppColors.primaryGradient,
+          color: AppColors.primaryForest,
           boxShadow: [
             BoxShadow(
               color: AppColors.primaryForest.withValues(alpha: 0.3),
@@ -34,7 +34,7 @@ class MainShell extends StatelessWidget {
           backgroundColor: Colors.transparent,
           shape: const CircleBorder(),
           child: const Icon(
-            Icons.call_split_rounded,
+            Icons.document_scanner_outlined,
             color: AppColors.white,
             size: 26,
           ),

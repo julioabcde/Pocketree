@@ -45,6 +45,7 @@ class TransactionCreateRequested extends TransactionEvent {
 
 class TransactionUpdateRequested extends TransactionEvent {
   final int transactionId;
+  final int? accountId;
   final int? categoryId;
   final double? amount;
   final DateTime? date;
@@ -52,6 +53,7 @@ class TransactionUpdateRequested extends TransactionEvent {
 
   const TransactionUpdateRequested({
     required this.transactionId,
+    this.accountId,
     this.categoryId,
     this.amount,
     this.date,
@@ -59,7 +61,14 @@ class TransactionUpdateRequested extends TransactionEvent {
   });
 
   @override
-  List<Object?> get props => [transactionId, categoryId, amount, date, note];
+  List<Object?> get props => [
+    transactionId,
+    accountId,
+    categoryId,
+    amount,
+    date,
+    note,
+  ];
 }
 
 class TransactionDeleteRequested extends TransactionEvent {

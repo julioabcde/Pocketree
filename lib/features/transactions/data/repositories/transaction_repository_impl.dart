@@ -107,6 +107,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   @override
   Future<Either<Failure, Transaction>> updateTransaction({
     required int transactionId,
+    int? accountId,
     int? categoryId,
     double? amount,
     DateTime? date,
@@ -115,6 +116,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
     try {
       final model = await remoteDatasource.updateTransaction(
         transactionId: transactionId,
+        accountId: accountId,
         categoryId: categoryId,
         amount: amount,
         date: date,

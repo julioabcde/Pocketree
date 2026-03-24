@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:pocketree/core/di/injection_container.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
 import 'package:pocketree/core/utils/calendar_date_picker.dart';
 import 'package:pocketree/core/utils/currency_formatter.dart';
+import 'package:pocketree/core/widgets/amount_numpad_sheet.dart';
+import 'package:pocketree/features/accounts/domain/entities/account.dart';
+import 'package:pocketree/features/accounts/domain/usecases/get_account_by_id_usecase.dart';
+import 'package:pocketree/features/accounts/presentation/widgets/account_picker_sheet.dart';
 import 'package:pocketree/features/categories/domain/entities/category.dart';
 import 'package:pocketree/features/categories/domain/entities/category_type.dart';
+import 'package:pocketree/features/categories/domain/usecases/get_category_by_id_usecase.dart';
 import 'package:pocketree/features/categories/presentation/widgets/category_picker_sheet.dart';
-import 'package:pocketree/features/accounts/domain/entities/account.dart';
-import 'package:pocketree/features/accounts/presentation/widgets/account_picker_sheet.dart';
-import 'package:pocketree/core/widgets/amount_numpad_sheet.dart';
+import 'package:pocketree/features/transactions/domain/entities/transaction.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_type.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/transaction_event.dart';
@@ -18,20 +22,44 @@ import 'package:pocketree/features/transactions/presentation/bloc/transaction_st
 
 enum _TransactionTab { expense, income, transfer }
 
-class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+class EditTransactionScreen extends StatefulWidget {
+  final Transaction transaction;
+
+  const EditTransactionScreen({
+    super.key,
+    required this.transaction,
+  });
 
   @override
-  State<AddTransactionScreen> createState() => _AddTransactionScreenState();
+  State<EditTransactionScreen> createState() => _EditTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> {
-  _TransactionTab _activeTab = _TransactionTab.expense;
-  double _amount = 0;
-  DateTime _selectedDate = DateTime.now();
+class _EditTransactionScreenState extends State<EditTransactionScreen> {
+  late _TransactionTab _activeTab;
+  late double _amount;
+  late DateTime _selectedDate;
   Category? _selectedCategoryObj;
   Account? _selectedAccountObj;
-  final _noteController = TextEditingController();
+  late final TextEditingController _noteController;
+
+  final GetAccountByIdUseCase _getAccountById = sl<GetAccountByIdUseCase>();
+  final GetCategoryByIdUseCase _getCategoryById = sl<GetCategoryByIdUseCase>();
+
+  bool get _isTransferTransaction => widget.transaction.isTransfer;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTab = widget.transaction.isTransfer
+        ? _TransactionTab.transfer
+        : widget.transaction.type == TransactionType.expense
+        ? _TransactionTab.expense
+        : _TransactionTab.income;
+    _amount = widget.transaction.amount;
+    _selectedDate = widget.transaction.date;
+    _noteController = TextEditingController(text: widget.transaction.note ?? '');
+    _loadInitialSelections();
+  }
 
   @override
   void dispose() {
@@ -39,33 +67,51 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
+  Future<void> _loadInitialSelections() async {
+    final accountResult = await _getAccountById(widget.transaction.accountId);
+    if (!mounted) return;
+
+    accountResult.fold(
+      (_) {},
+      (account) => _selectedAccountObj = account,
+    );
+
+    final categoryId = widget.transaction.categoryId;
+    if (categoryId != null) {
+      final categoryResult = await _getCategoryById(categoryId);
+      if (!mounted) return;
+      categoryResult.fold(
+        (_) {},
+        (category) => _selectedCategoryObj = category,
+      );
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void _saveTransaction() {
     if (_amount <= 0) {
       _showErrorSnackbar('Please enter a valid amount');
       return;
     }
-    if (_selectedAccountObj == null) {
-      _showErrorSnackbar('Please select an account');
+
+    if (_isTransferTransaction) {
+      _showErrorSnackbar('Transfer transactions cannot be edited');
       return;
     }
-    if (_activeTab != _TransactionTab.transfer && _selectedCategoryObj == null) {
+
+    if (_selectedCategoryObj == null) {
       _showErrorSnackbar('Please select a category');
       return;
     }
 
     final bloc = context.read<TransactionBloc>();
-    if (_activeTab == _TransactionTab.transfer) {
-      _showErrorSnackbar('Transfers are not yet supported in this screen');
-      return;
-    }
 
-    final transactionType = _activeTab == _TransactionTab.expense
-        ? TransactionType.expense
-        : TransactionType.income;
-
-    final event = TransactionCreateRequested(
-      accountId: _selectedAccountObj!.id,
-      type: transactionType,
+    final event = TransactionUpdateRequested(
+      transactionId: widget.transaction.id,
+      accountId: _selectedAccountObj?.id,
       amount: _amount,
       date: _selectedDate,
       categoryId: _selectedCategoryObj?.id,
@@ -100,7 +146,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: SafeArea(
           child: Column(
             children: [
-            //  App Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Row(
@@ -114,7 +159,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                   const SizedBox(width: 4),
                   const Text(
-                    'Add Transaction',
+                    'Edit Transaction',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -124,16 +169,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
             ),
-
-            //  Scrollable Content
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   const SizedBox(height: 4),
-
-                  //  Tab Selector
-                  Container(
+                  Opacity(
+                    opacity: 0.7,
+                    child: Container(
                     height: 48,
                     decoration: BoxDecoration(
                       color: AppColors.neutralSand,
@@ -150,8 +193,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         };
 
                         return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _activeTab = tab),
+                          child: IgnorePointer(
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               curve: Curves.easeInOut,
@@ -178,11 +220,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       }).toList(),
                     ),
                   ),
+                  ),
                   const SizedBox(height: 32),
-
-                  //  Amount Display
                   GestureDetector(
-                    onTap: _pickAmount,
+                    onTap: _isTransferTransaction ? null : _pickAmount,
                     child: Column(
                       children: [
                         Text(
@@ -208,11 +249,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
-
-                  //  Date Row
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: _pickDate,
+                    onTap: _isTransferTransaction ? null : _pickDate,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Row(
@@ -233,10 +272,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               ),
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right_rounded,
                             size: 22,
-                            color: AppColors.neutralTaupe,
+                            color: _isTransferTransaction
+                                ? AppColors.neutralTaupe.withValues(alpha: 0.5)
+                                : AppColors.neutralTaupe,
                           ),
                         ],
                       ),
@@ -247,11 +288,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     thickness: 0.5,
                     color: AppColors.neutralTaupe.withValues(alpha: 0.3),
                   ),
-
-                  //  Category Row
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: _pickCategory,
+                    onTap: _isTransferTransaction ? null : _pickCategory,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Row(
@@ -264,7 +303,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
-                              _selectedCategoryObj?.name ?? 'Select category',
+                              _selectedCategoryObj?.name ??
+                                  (widget.transaction.categoryId != null
+                                      ? 'Category #${widget.transaction.categoryId}'
+                                      : 'Select category'),
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: _selectedCategoryObj != null
@@ -276,10 +318,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               ),
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right_rounded,
                             size: 22,
-                            color: AppColors.neutralTaupe,
+                            color: _isTransferTransaction
+                                ? AppColors.neutralTaupe.withValues(alpha: 0.5)
+                                : AppColors.neutralTaupe,
                           ),
                         ],
                       ),
@@ -290,11 +334,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     thickness: 0.5,
                     color: AppColors.neutralTaupe.withValues(alpha: 0.3),
                   ),
-
-                  //  Account Row
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: _pickAccount,
+                    onTap: _isTransferTransaction ? null : _pickAccount,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Row(
@@ -307,22 +349,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
-                              _selectedAccountObj?.name ?? 'Select account',
-                              style: TextStyle(
+                              _selectedAccountObj?.name ??
+                                  'Account #${widget.transaction.accountId}',
+                              style: const TextStyle(
                                 fontSize: 15,
-                                fontWeight: _selectedAccountObj != null
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
-                                color: _selectedAccountObj != null
-                                    ? AppColors.brownEspresso
-                                    : AppColors.brownMocha,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.brownEspresso,
                               ),
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right_rounded,
                             size: 22,
-                            color: AppColors.neutralTaupe,
+                            color: _isTransferTransaction
+                                ? AppColors.neutralTaupe.withValues(alpha: 0.5)
+                                : AppColors.neutralTaupe,
                           ),
                         ],
                       ),
@@ -333,8 +374,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     thickness: 0.5,
                     color: AppColors.neutralTaupe.withValues(alpha: 0.3),
                   ),
-
-                  //  Note Row
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     child: Row(
@@ -348,6 +387,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         Expanded(
                           child: TextField(
                             controller: _noteController,
+                            enabled: !_isTransferTransaction,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w400,
@@ -380,37 +420,58 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
             ),
-
-            //  Save Button
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
               child: SizedBox(
                 width: double.infinity,
                 height: 54,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryForest,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: ElevatedButton(
-                    onPressed: _saveTransaction,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
+                child: BlocBuilder<TransactionBloc, TransactionState>(
+                  builder: (context, state) {
+                    final isLoading =
+                        state is TransactionLoaded && state.isPerformingAction;
+
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: _isTransferTransaction
+                            ? AppColors.neutralTaupe
+                            : AppColors.primaryForest,
                         borderRadius: BorderRadius.circular(30),
                       ),
-                    ),
-                    child: const Text(
-                      'SAVE TRANSACTION',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.white,
-                        letterSpacing: 0.5,
+                      child: ElevatedButton(
+                        onPressed: (_isTransferTransaction || isLoading)
+                            ? null
+                            : _saveTransaction,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          disabledBackgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              )
+                            : Text(
+                                _isTransferTransaction
+                                    ? 'TRANSFER CANNOT BE EDITED'
+                                    : 'UPDATE TRANSACTION',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -421,15 +482,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  //  Logic Methods
-
   Future<void> _pickDate() async {
     final picked = await showCalendarDatePicker(
       context,
       initialDate: _selectedDate,
       maxDate: DateTime.now(),
     );
-    if (picked != null) setState(() => _selectedDate = picked);
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
   }
 
   String _formatDisplayDate(DateTime date) {
@@ -449,7 +510,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _pickCategory() async {
-    if (_activeTab == _TransactionTab.transfer) return;
+    if (_isTransferTransaction) {
+      return;
+    }
 
     final categoryType = switch (_activeTab) {
       _TransactionTab.expense => CategoryType.expense,
@@ -468,12 +531,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _pickAccount() async {
+    if (_isTransferTransaction) {
+      return;
+    }
+
     final picked = await showAccountPicker(
       context,
       selected: _selectedAccountObj,
     );
+
     if (picked != null) {
       setState(() => _selectedAccountObj = picked);
     }
   }
+
 }

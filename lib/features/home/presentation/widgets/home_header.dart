@@ -6,7 +6,8 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      color: AppColors.neutralLinen,
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -21,7 +22,7 @@ class HomeHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: AppColors.brownEspresso,
+              color: AppColors.darkDeepPine,
               letterSpacing: -0.5,
             ),
           ),
