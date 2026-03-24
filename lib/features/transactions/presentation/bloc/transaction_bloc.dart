@@ -140,6 +140,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
 
     final result = await updateTransaction(
       transactionId: event.transactionId,
+      accountId: event.accountId,
       categoryId: event.categoryId,
       amount: event.amount,
       date: event.date,

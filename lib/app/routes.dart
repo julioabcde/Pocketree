@@ -11,6 +11,8 @@ import 'package:pocketree/features/auth/presentation/screens/auth_screen.dart';
 import 'package:pocketree/features/home/presentation/screens/home_screen.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
 import 'package:pocketree/features/transactions/presentation/screens/add_transactions_screen.dart';
+import 'package:pocketree/features/transactions/presentation/screens/edit_transaction_screen.dart';
+import 'package:pocketree/features/transactions/domain/entities/transaction.dart';
 import 'package:pocketree/features/splitbill/presentation/screens/splitbill_screen.dart';
 import 'package:pocketree/features/reports/presentation/screens/reports_screen.dart';
 import 'package:pocketree/features/settings/presentation/screens/settings_screen.dart';
@@ -45,6 +47,15 @@ GoRouter createRouter(AuthBloc authBloc) {
         builder: (context, state) => BlocProvider(
           create: (_) => sl<TransactionBloc>(),
           child: const AddTransactionScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/edit-transaction',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<TransactionBloc>(),
+          child: EditTransactionScreen(
+            transaction: state.extra! as Transaction,
+          ),
         ),
       ),
       StatefulShellRoute.indexedStack(

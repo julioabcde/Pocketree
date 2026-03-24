@@ -10,6 +10,7 @@ class UpdateTransactionUseCase {
 
   Future<Either<Failure, Transaction>> call({
     required int transactionId,
+    int? accountId,
     int? categoryId,
     double? amount,
     DateTime? date,
@@ -17,6 +18,7 @@ class UpdateTransactionUseCase {
   }) {
     return repository.updateTransaction(
       transactionId: transactionId,
+      accountId: accountId,
       categoryId: categoryId,
       amount: amount,
       date: date,

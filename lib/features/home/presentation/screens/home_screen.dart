@@ -6,7 +6,13 @@ import 'package:pocketree/features/home/presentation/bloc/home_bloc.dart';
 import 'package:pocketree/features/home/presentation/bloc/home_event.dart';
 import 'package:pocketree/features/home/presentation/bloc/home_state.dart';
 import 'package:pocketree/features/home/presentation/widgets/home_header.dart';
+import 'package:pocketree/features/home/presentation/widgets/transaction_header_delegate.dart';
+import 'package:pocketree/features/home/presentation/widgets/transaction_item.dart';
 import 'package:pocketree/features/home/presentation/widgets/wallet_carousel.dart';
+import 'package:pocketree/features/transactions/domain/entities/transaction.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_event.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_state.dart';
 import 'package:pocketree/core/di/injection_container.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -14,8 +20,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<HomeBloc>()..add(const HomeDataRequested()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => sl<HomeBloc>()..add(const HomeDataRequested()),
+        ),
+        BlocProvider(create: (_) => sl<TransactionBloc>()),
+      ],
       child: const _HomeView(),
     );
   }
@@ -47,6 +58,7 @@ class _HomeViewState extends State<_HomeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.neutralLinen,
       floatingActionButton: Container(
         height: 56,
         width: 56,
@@ -63,7 +75,14 @@ class _HomeViewState extends State<_HomeView> {
         ),
         child: FloatingActionButton(
           heroTag: 'addTransaction',
-          onPressed: () => GoRouter.of(context).push('/add-transaction'),
+          onPressed: () async {
+            final created = await GoRouter.of(context).push<bool>(
+              '/add-transaction',
+            );
+            if (created == true && context.mounted) {
+              context.read<HomeBloc>().add(const HomeDataRequested());
+            }
+          },
           elevation: 0,
           backgroundColor: Colors.transparent,
           shape: const CircleBorder(),
@@ -76,38 +95,73 @@ class _HomeViewState extends State<_HomeView> {
       ),
       body: BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
-          if (state is HomeLoading || state is HomeInitial) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryForest),
-            );
-          }
+          return BlocListener<TransactionBloc, TransactionState>(
+            listener: (context, transactionState) {
+              if (transactionState is TransactionActionSuccess) {
+                context.read<HomeBloc>().add(const HomeDataRequested());
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(transactionState.message),
+                      backgroundColor: AppColors.primaryForest,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+              }
 
-          if (state is HomeError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    state.message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.brownDriftwood),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<HomeBloc>().add(const HomeDataRequested()),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
+              if (transactionState is TransactionError) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(transactionState.message),
+                      backgroundColor: const Color(0xFFB3261E),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+              }
+            },
+            child: Builder(
+              builder: (context) {
+                if (state is HomeLoading || state is HomeInitial) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryForest,
+                    ),
+                  );
+                }
 
-          if (state is HomeLoaded) {
-            return _buildContent(context, state);
-          }
+                if (state is HomeError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          state.message,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: AppColors.brownDriftwood),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => context.read<HomeBloc>().add(
+                            const HomeDataRequested(),
+                          ),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-          return const SizedBox.shrink();
+                if (state is HomeLoaded) {
+                  return _buildContent(context, state);
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+          );
         },
       ),
     );
@@ -115,6 +169,7 @@ class _HomeViewState extends State<_HomeView> {
 
   Widget _buildContent(BuildContext context, HomeLoaded state) {
     final accounts = state.data.accounts;
+    final transactions = state.data.todayTransactions;
 
     return RefreshIndicator(
       color: AppColors.primaryForest,
@@ -129,23 +184,172 @@ class _HomeViewState extends State<_HomeView> {
           // Header
           const SliverToBoxAdapter(child: HomeHeader()),
 
-          // Wallet Section
+          // Wallet
+          if (accounts.isNotEmpty)
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: WalletSectionDelegate(
+                height: 280,
+                accounts: accounts,
+                currentPage: _currentPage,
+                pageController: _pageController,
+                onPageChanged: (index) {
+                  setState(() => _currentPage = index);
+                },
+              ),
+            ),
+
+          // Transaction Header
           SliverPersistentHeader(
             pinned: true,
-            delegate: WalletSectionDelegate(
-              height: 280,
-              accounts: accounts,
-              currentPage: _currentPage,
-              pageController: _pageController,
-              onPageChanged: (index) {
-                setState(() => _currentPage = index);
-              },
-            ),
+            delegate: TransactionHeaderDelegate(height: 72),
           ),
 
-          // TODO: Daily transaction
-          const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
+          // Transaction List
+          if (transactions.isEmpty)
+            SliverToBoxAdapter(child: _buildEmpty())
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return TransactionItem(
+                  transaction: transactions[index],
+                  showDivider: index < transactions.length - 1,
+                  onOptionsTap: () =>
+                      _showTransactionOptions(context, transactions[index]),
+                );
+              }, childCount: transactions.length),
+            ),
+
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Container(color: AppColors.neutralCream),
+          ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showTransactionOptions(
+    BuildContext context,
+    Transaction transaction,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.neutralTaupe,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.edit_outlined,
+                    color: AppColors.brownDriftwood,
+                  ),
+                  title: const Text('Edit Transaction'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final updated = await GoRouter.of(context).push<bool>(
+                      '/edit-transaction',
+                      extra: transaction,
+                    );
+                    if (updated == true && context.mounted) {
+                      context.read<HomeBloc>().add(const HomeDataRequested());
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Color(0xFFB3261E),
+                  ),
+                  title: const Text(
+                    'Delete Transaction',
+                    style: TextStyle(color: Color(0xFFB3261E)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDeleteTransaction(context, transaction.id);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmDeleteTransaction(
+    BuildContext context,
+    int transactionId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Transaction'),
+          content: const Text('Are you sure you want to delete this transaction?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFFB3261E)),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      context.read<TransactionBloc>().add(
+        TransactionDeleteRequested(transactionId: transactionId),
+      );
+    }
+  }
+
+  // Empty state
+  Widget _buildEmpty() {
+    return Container(
+      color: AppColors.neutralCream,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 40,
+              color: AppColors.neutralTaupe.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'No transactions today',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.brownMocha,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

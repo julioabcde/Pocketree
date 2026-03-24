@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
 
 abstract class AppTheme {
   static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: GoogleFonts.manrope().fontFamily,
       scaffoldBackgroundColor: AppColors.neutralCream,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primaryForest,

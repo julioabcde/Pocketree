@@ -38,6 +38,7 @@ abstract class TransactionRepository {
 
   Future<Either<Failure, Transaction>> updateTransaction({
     required int transactionId,
+    int? accountId,
     int? categoryId,
     double? amount,
     DateTime? date,

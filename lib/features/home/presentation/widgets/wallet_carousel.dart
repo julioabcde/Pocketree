@@ -19,7 +19,7 @@ class WalletSectionDelegate extends SliverPersistentHeaderDelegate {
     required this.currentPage,
     required this.pageController,
     required this.onPageChanged,
-    required this.height,
+    this.height = 280,
   });
 
   @override
@@ -34,87 +34,98 @@ class WalletSectionDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: AppColors.neutralCream,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'My Wallets',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.brownEspresso,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () async {
-                    await GoRouter.of(context).push('/accounts');
-                    if (context.mounted) {
-                      context
-                          .read<HomeBloc>()
-                          .add(const HomeDataRequested());
-                    }
-                  },
-                  child: const Text(
-                    'See All',
+    return SizedBox.expand(
+      child: Container(
+        color: AppColors.neutralLinen,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'MY WALLETS',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primaryForest,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.brownMocha,
                     ),
                   ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: () async {
+                      await GoRouter.of(context).push('/accounts');
+                      if (context.mounted) {
+                        context.read<HomeBloc>().add(const HomeDataRequested());
+                      }
+                    },
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'See All',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.darkDeepPine,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 16,
+                          color: AppColors.darkDeepPine,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
-          // Wallet cards pageView
-          SizedBox(
-            height: 200,
-            child: PageView.builder(
-              controller: pageController,
-              itemCount: accounts.length,
-              onPageChanged: onPageChanged,
-              padEnds: true,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: WalletCard(account: accounts[index]),
-                );
-              },
+            // Card PageView
+            SizedBox(
+              height: 180,
+              child: PageView.builder(
+                controller: pageController,
+                itemCount: accounts.length,
+                onPageChanged: onPageChanged,
+                padEnds: true,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: WalletCard(account: accounts[index]),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // Page indicator dots
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              accounts.length,
-              (index) => AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: index == currentPage ? 24 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: index == currentPage
-                      ? AppColors.primaryForest
-                      : AppColors.neutralTaupe,
+            // Dot pagination
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                accounts.length,
+                (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: index == currentPage ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    color: index == currentPage
+                        ? AppColors.primaryForest
+                        : AppColors.neutralTaupe,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

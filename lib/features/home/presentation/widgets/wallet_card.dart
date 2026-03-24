@@ -37,8 +37,8 @@ class WalletCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          //  Type Label 
           Text(
             typeLabel,
             style: TextStyle(
@@ -48,6 +48,8 @@ class WalletCard extends StatelessWidget {
               letterSpacing: 1.2,
             ),
           ),
+
+          //  Balance 
           Text(
             CurrencyFormatter.format(account.balance),
             style: const TextStyle(
@@ -57,31 +59,24 @@ class WalletCard extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                account.name,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.white.withValues(alpha: 0.8),
-                ),
+          const Spacer(),
+
+          //  Arrow Icon 
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
               ),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: AppColors.white.withValues(alpha: 0.8),
-                  size: 18,
-                ),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.white.withValues(alpha: 0.8),
+                size: 18,
               ),
-            ],
+            ),
           ),
         ],
       ),

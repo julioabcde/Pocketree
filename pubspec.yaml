@@ -20,6 +20,8 @@ dependencies:
   expandable_page_view: ^1.2.1
   intl: ^0.20.2 
   date_picker_plus: ^6.0.0
+  google_fonts: ^6.1.0
+  sliver_tools: ^0.2.12
 
 dev_dependencies:
   flutter_test:
