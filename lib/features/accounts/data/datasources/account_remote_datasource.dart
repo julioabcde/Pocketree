@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pocketree/core/error/exceptions.dart';
+import 'package:pocketree/core/error/dio_error_handler.dart';
 import 'package:pocketree/features/accounts/data/models/account_model.dart';
 import 'package:pocketree/features/accounts/data/models/account_summary_model.dart';
 import 'package:pocketree/features/accounts/domain/entities/account_type.dart';
@@ -51,7 +51,7 @@ class AccountRemoteDatasourceImpl implements AccountRemoteDatasource {
       final response = await dio.post('/accounts', data: data);
       return AccountModel.fromJson(response.data);
     } on DioException catch (e) {
-      _handleDioError(e);
+      handleDioError(e);
     }
   }
 
@@ -64,7 +64,7 @@ class AccountRemoteDatasourceImpl implements AccountRemoteDatasource {
           .map((json) => AccountModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
-      _handleDioError(e);
+      handleDioError(e);
     }
   }
 
@@ -74,7 +74,7 @@ class AccountRemoteDatasourceImpl implements AccountRemoteDatasource {
       final response = await dio.get('/accounts/summary');
       return AccountSummaryModel.fromJson(response.data);
     } on DioException catch (e) {
-      _handleDioError(e);
+      handleDioError(e);
     }
   }
 
@@ -84,7 +84,7 @@ class AccountRemoteDatasourceImpl implements AccountRemoteDatasource {
       final response = await dio.get('/accounts/$accountId');
       return AccountModel.fromJson(response.data);
     } on DioException catch (e) {
-      _handleDioError(e);
+      handleDioError(e);
     }
   }
 
@@ -103,7 +103,7 @@ class AccountRemoteDatasourceImpl implements AccountRemoteDatasource {
       final response = await dio.put('/accounts/$accountId', data: data);
       return AccountModel.fromJson(response.data);
     } on DioException catch (e) {
-      _handleDioError(e);
+      handleDioError(e);
     }
   }
 
@@ -112,38 +112,7 @@ class AccountRemoteDatasourceImpl implements AccountRemoteDatasource {
     try {
       await dio.delete('/accounts/$accountId');
     } on DioException catch (e) {
-      _handleDioError(e);
-    }
-  }
-
-  Never _handleDioError(DioException e) {
-    if (e.response?.statusCode == 401) {
-      throw const UnauthorizedException();
-    } else if (e.response?.statusCode == 403) {
-      throw ServerException(
-        message: 'Not authorized to access this account',
-        statusCode: 403,
-      );
-    } else if (e.response?.statusCode == 404) {
-      throw ServerException(
-        message: 'Account not found',
-        statusCode: 404,
-      );
-    } else if (e.response?.statusCode == 409) {
-      throw ServerException(
-        message: e.response?.data['detail'] as String? ??
-            'An account with the same name and type already exists',
-        statusCode: 409,
-      );
-    } else if (e.type == DioExceptionType.connectionError ||
-        e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      throw NetworkException(message: e.message ?? 'Network error');
-    } else {
-      throw ServerException(
-        message: e.toString(),
-        statusCode: e.response?.statusCode,
-      );
+      handleDioError(e);
     }
   }
 }

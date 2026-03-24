@@ -4,11 +4,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pocketree/app/main_shell.dart';
+import 'package:pocketree/core/di/injection_container.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_state.dart';
 import 'package:pocketree/features/auth/presentation/screens/auth_screen.dart';
 import 'package:pocketree/features/home/presentation/screens/home_screen.dart';
-import 'package:pocketree/features/transactions/presentation/screens/transactions_screen.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
+import 'package:pocketree/features/transactions/presentation/screens/add_transactions_screen.dart';
 import 'package:pocketree/features/splitbill/presentation/screens/splitbill_screen.dart';
 import 'package:pocketree/features/reports/presentation/screens/reports_screen.dart';
 import 'package:pocketree/features/settings/presentation/screens/settings_screen.dart';
@@ -38,6 +40,13 @@ GoRouter createRouter(AuthBloc authBloc) {
         path: '/accounts',
         builder: (context, state) => const AccountsScreen(),
       ),
+      GoRoute(
+        path: '/add-transaction',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<TransactionBloc>(),
+          child: const AddTransactionScreen(),
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
@@ -58,7 +67,10 @@ GoRouter createRouter(AuthBloc authBloc) {
             routes: [
               GoRoute(
                 path: '/transactions',
-                builder: (context, state) => const TransactionsScreen(),
+                builder: (context, state) => BlocProvider(
+                  create: (_) => sl<TransactionBloc>(),
+                  child: const AddTransactionScreen(),
+                ),
               ),
             ],
           ),
