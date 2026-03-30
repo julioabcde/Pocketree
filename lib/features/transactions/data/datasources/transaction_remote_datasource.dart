@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketree/core/error/dio_error_handler.dart';
+import 'package:pocketree/features/transactions/data/models/daily_summary.model.dart';
 import 'package:pocketree/features/transactions/data/models/transaction_model.dart';
 import 'package:pocketree/features/transactions/data/models/transaction_summary_model.dart';
 import 'package:pocketree/features/transactions/data/models/transfer_result_model.dart';
@@ -25,6 +26,11 @@ abstract class TransactionRemoteDatasource {
 
   Future<TransactionSummaryModel> getTransactionSummary({
     TransactionFilter filter = const TransactionFilter(),
+  });
+
+  Future<List<DailySummaryModel>> getDailySummary({
+    required String month,
+    int? accountId,
   });
 
   Future<TransferResultModel> createTransfer({
@@ -121,6 +127,33 @@ class TransactionRemoteDatasourceImpl implements TransactionRemoteDatasource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       return TransactionSummaryModel.fromJson(response.data);
+    } on DioException catch (e) {
+      handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<DailySummaryModel>> getDailySummary({
+    required String month,
+    int? accountId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'month': month,
+      };
+
+      if (accountId != null) queryParams['account_id'] = accountId;
+
+      final response = await dio.get(
+        '/transactions/daily-summary',
+        queryParameters: queryParams,
+      );
+      final list = response.data as List<dynamic>;
+      return list
+          .map(
+            (json) => DailySummaryModel.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
     } on DioException catch (e) {
       handleDioError(e);
     }

@@ -39,10 +39,12 @@ import 'package:pocketree/features/transactions/domain/repositories/transaction_
 import 'package:pocketree/features/transactions/domain/usecases/create_transaction_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/create_transfer_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/delete_transaction_usecase.dart';
+import 'package:pocketree/features/transactions/domain/usecases/get_daily_summary_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/get_transaction_by_id_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/get_transaction_summary_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/get_transactions_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/update_transaction_usecase.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/calender_bloc.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
 
 final sl = GetIt.instance;
@@ -57,7 +59,7 @@ Future<void> setupDependencies() async {
   // Network
   sl.registerLazySingleton(() => DioClient.create(tokenStorage: sl()));
 
-  //  Datasources 
+  //  Datasources
   sl.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceImpl(sl()),
   );
@@ -71,7 +73,7 @@ Future<void> setupDependencies() async {
     () => TransactionRemoteDatasourceImpl(sl()),
   );
 
-  //  Repositories 
+  //  Repositories
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl()),
   );
@@ -85,7 +87,7 @@ Future<void> setupDependencies() async {
     () => TransactionRepositoryImpl(sl()),
   );
 
-  //  Use Cases 
+  //  Use Cases
   sl.registerFactory(() => LogInUseCase(sl()));
   sl.registerFactory(() => LogOutUseCase(sl()));
   sl.registerFactory(() => RegisterUseCase(sl()));
@@ -107,6 +109,7 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => GetTransactionsUseCase(sl()));
   sl.registerFactory(() => GetTransactionByIdUseCase(sl()));
   sl.registerFactory(() => GetTransactionSummaryUseCase(sl()));
+  sl.registerFactory(() => GetDailySummaryUseCase(sl()));
   sl.registerFactory(() => CreateTransactionUseCase(sl()));
   sl.registerFactory(() => CreateTransferUseCase(sl()));
   sl.registerFactory(() => UpdateTransactionUseCase(sl()));
@@ -114,7 +117,7 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory(() => GetHomeDataUseCase(sl(), sl()));
 
-  //  BLoCs 
+  //  BLoCs
   sl.registerFactory(
     () => AuthBloc(
       logIn: sl(),
@@ -151,6 +154,14 @@ Future<void> setupDependencies() async {
       updateTransaction: sl(),
       deleteTransaction: sl(),
       createTransfer: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => CalendarBloc(
+      getDailySummary: sl(),
+      getTransactions: sl(),
+      getTransactionSummary: sl(),
     ),
   );
 

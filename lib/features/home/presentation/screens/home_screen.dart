@@ -76,9 +76,9 @@ class _HomeViewState extends State<_HomeView> {
         child: FloatingActionButton(
           heroTag: 'addTransaction',
           onPressed: () async {
-            final created = await GoRouter.of(context).push<bool>(
-              '/add-transaction',
-            );
+            final created = await GoRouter.of(
+              context,
+            ).push<bool>('/add-transaction');
             if (created == true && context.mounted) {
               context.read<HomeBloc>().add(const HomeDataRequested());
             }
@@ -140,7 +140,9 @@ class _HomeViewState extends State<_HomeView> {
                         Text(
                           state.message,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: AppColors.brownDriftwood),
+                          style: const TextStyle(
+                            color: AppColors.brownDriftwood,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -170,6 +172,12 @@ class _HomeViewState extends State<_HomeView> {
   Widget _buildContent(BuildContext context, HomeLoaded state) {
     final accounts = state.data.accounts;
     final transactions = state.data.todayTransactions;
+    final accountNameById = {
+      for (final account in accounts) account.id: account.name,
+    };
+    final transactionById = {
+      for (final transaction in transactions) transaction.id: transaction,
+    };
 
     return RefreshIndicator(
       color: AppColors.primaryForest,
@@ -211,11 +219,19 @@ class _HomeViewState extends State<_HomeView> {
           else
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
+                final transaction = transactions[index];
+
                 return TransactionItem(
-                  transaction: transactions[index],
+                  transaction: transaction,
                   showDivider: index < transactions.length - 1,
-                  onOptionsTap: () =>
-                      _showTransactionOptions(context, transactions[index]),
+                  transferMetaLabel: _buildTransferMetaLabel(
+                    transaction: transaction,
+                    transactionById: transactionById,
+                    accountNameById: accountNameById,
+                  ),
+                  onOptionsTap: transaction.isTransfer
+                      ? null
+                      : () => _showTransactionOptions(context, transaction),
                 );
               }, childCount: transactions.length),
             ),
@@ -229,10 +245,42 @@ class _HomeViewState extends State<_HomeView> {
     );
   }
 
+  String? _buildTransferMetaLabel({
+    required Transaction transaction,
+    required Map<int, Transaction> transactionById,
+    required Map<int, String> accountNameById,
+  }) {
+    if (!transaction.isTransfer) {
+      return null;
+    }
+
+    final pairId = transaction.transferId;
+    if (pairId == null) {
+      return transaction.isIncome ? 'Transfer in' : 'Transfer out';
+    }
+
+    final counterpart = transactionById[pairId];
+    if (counterpart == null) {
+      return transaction.isIncome ? 'Transfer in' : 'Transfer out';
+    }
+
+    final counterpartAccountName =
+        accountNameById[counterpart.accountId] ??
+        'Account #${counterpart.accountId}';
+
+    return transaction.isIncome
+        ? 'From $counterpartAccountName'
+        : 'To $counterpartAccountName';
+  }
+
   Future<void> _showTransactionOptions(
     BuildContext context,
     Transaction transaction,
   ) async {
+    if (transaction.isTransfer) {
+      return;
+    }
+
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.white,
@@ -263,10 +311,9 @@ class _HomeViewState extends State<_HomeView> {
                   title: const Text('Edit Transaction'),
                   onTap: () async {
                     Navigator.pop(context);
-                    final updated = await GoRouter.of(context).push<bool>(
-                      '/edit-transaction',
-                      extra: transaction,
-                    );
+                    final updated = await GoRouter.of(
+                      context,
+                    ).push<bool>('/edit-transaction', extra: transaction);
                     if (updated == true && context.mounted) {
                       context.read<HomeBloc>().add(const HomeDataRequested());
                     }
@@ -303,7 +350,9 @@ class _HomeViewState extends State<_HomeView> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Delete Transaction'),
-          content: const Text('Are you sure you want to delete this transaction?'),
+          content: const Text(
+            'Are you sure you want to delete this transaction?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -311,7 +360,9 @@ class _HomeViewState extends State<_HomeView> {
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFFB3261E)),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFB3261E),
+              ),
               child: const Text('Delete'),
             ),
           ],

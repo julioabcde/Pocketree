@@ -1,277 +1,215 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:pocketree/core/di/injection_container.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
-import 'package:pocketree/core/utils/currency_formatter.dart';
-import 'package:pocketree/features/transactions/domain/entities/transaction.dart';
-import 'package:pocketree/features/transactions/domain/entities/transaction_type.dart';
-import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
-import 'package:pocketree/features/transactions/presentation/bloc/transaction_event.dart';
-import 'package:pocketree/features/transactions/presentation/bloc/transaction_state.dart';
 
-class TransactionsScreen extends StatelessWidget {
+enum _TransactionsTab { calendar, subscriptions, shared }
+
+class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<TransactionBloc>()..add(const TransactionDataRequested()),
-      child: const _TransactionsView(),
-    );
-  }
+  State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsView extends StatelessWidget {
-  const _TransactionsView();
+class _TransactionsScreenState extends State<TransactionsScreen> {
+  _TransactionsTab _activeTab = _TransactionsTab.calendar;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.neutralCream,
-      floatingActionButton: Container(
-        height: 56,
-        width: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.brownEspresso,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.brownEspresso.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () => GoRouter.of(context).push('/transactions/add'),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.add_rounded,
-            color: AppColors.white,
-            size: 28,
-          ),
-        ),
-      ),
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            Expanded(
-              child: BlocBuilder<TransactionBloc, TransactionState>(
-                builder: (context, state) {
-                  if (state is TransactionLoading || state is TransactionInitial) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryForest),
-                    );
-                  }
-
-                  if (state is TransactionError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            state.message,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppColors.brownDriftwood),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => context
-                                .read<TransactionBloc>()
-                                .add(const TransactionDataRequested()),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (state is TransactionLoaded) {
-                    return _buildContent(context, state);
-                  }
-
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-      child: const Text(
-        'Transactions',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          color: AppColors.brownEspresso,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, TransactionLoaded state) {
-    if (state.transactions.isEmpty) {
-      return _buildEmpty();
-    }
-
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification is ScrollEndNotification &&
-            notification.metrics.extentAfter < 100 &&
-            !state.hasReachedEnd &&
-            !state.isLoadingMore) {
-          context.read<TransactionBloc>().add(const TransactionNextPageRequested());
-        }
-        return false;
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 80),
-        itemCount: state.transactions.length + (state.isLoadingMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == state.transactions.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.primaryForest),
-              ),
-            );
-          }
-          return _buildTransactionItem(state.transactions[index]);
-        },
-      ),
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 64,
-            color: AppColors.neutralTaupe,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No transactions yet',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.brownMocha,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Tap + to add your first transaction',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.neutralTaupe,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionItem(Transaction transaction) {
-    final isIncome = transaction.type == TransactionType.income;
-    final isTransfer = transaction.isTransfer;
-
-    final Color iconBg = isTransfer
-        ? AppColors.neutralSand
-        : isIncome
-            ? AppColors.primaryForest.withValues(alpha: 0.1)
-            : AppColors.brownEspresso.withValues(alpha: 0.08);
-
-    final Color iconColor = isTransfer
-        ? AppColors.brownMocha
-        : isIncome
-            ? AppColors.primaryForest
-            : AppColors.brownEspresso;
-
-    final IconData icon = isTransfer
-        ? Icons.swap_horiz_rounded
-        : isIncome
-            ? Icons.arrow_downward_rounded
-            : Icons.arrow_upward_rounded;
-
-    final Color amountColor = isTransfer
-        ? AppColors.brownDriftwood
-        : isIncome
-            ? AppColors.primaryForest
-            : AppColors.brownEspresso;
-
-    final String amountPrefix = isTransfer ? '' : isIncome ? '+' : '-';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 22, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            //  Header 
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+              child: Row(
                 children: [
-                  Text(
-                    transaction.note?.isNotEmpty == true
-                        ? transaction.note!
-                        : isTransfer
-                            ? 'Transfer'
-                            : isIncome
-                                ? 'Income'
-                                : 'Expense',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.brownEspresso,
+                  const Expanded(
+                    child: Text(
+                      'Transactions',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.brownEspresso,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    DateFormat('d MMM yyyy').format(transaction.date),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.brownMocha,
+                  IconButton(
+                    icon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primaryForest,
+                      size: 24,
                     ),
+                    onPressed: () {
+                      // TODO: Transaction search
+                    },
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            //  Tab Switcher 
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildTabSwitcher(),
+            ),
+            const SizedBox(height: 24),
+
+            //  Tab Content 
+            Expanded(
+              child: switch (_activeTab) {
+                _TransactionsTab.calendar => _buildCalendarPlaceholder(),
+                _TransactionsTab.subscriptions =>
+                  _buildSubscriptionsPlaceholder(),
+                _TransactionsTab.shared => _buildSharedPlaceholder(),
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  //  Tab Switcher 
+
+  Widget _buildTabSwitcher() {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: AppColors.neutralSand,
+        borderRadius: BorderRadius.circular(25),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: _TransactionsTab.values.map((tab) {
+          final isActive = _activeTab == tab;
+          final label = switch (tab) {
+            _TransactionsTab.calendar => 'Calendar',
+            _TransactionsTab.subscriptions => 'Subscriptions',
+            _TransactionsTab.shared => 'Shared',
+          };
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                if (tab == _activeTab) return;
+                setState(() => _activeTab = tab);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.brownEspresso : Colors.transparent,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isActive
+                        ? AppColors.white
+                        : AppColors.brownMocha,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  //  Placeholder Builders 
+
+  Widget _buildCalendarPlaceholder() {
+    return _PlaceholderTab(
+      icon: Icons.calendar_month_outlined,
+      title: 'Calendar View',
+      subtitle: 'View your daily transactions on a calendar',
+    );
+  }
+
+  Widget _buildSubscriptionsPlaceholder() {
+    return _PlaceholderTab(
+      icon: Icons.autorenew_rounded,
+      title: 'Subscriptions',
+      subtitle: 'Track your recurring payments and subscriptions',
+    );
+  }
+
+  Widget _buildSharedPlaceholder() {
+    return _PlaceholderTab(
+      icon: Icons.group_outlined,
+      title: 'Shared Expenses',
+      subtitle: 'View your split bill history',
+    );
+  }
+}
+
+//  Reusable placeholder widget 
+
+class _PlaceholderTab extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _PlaceholderTab({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primaryForest.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 36,
+                color: AppColors.primaryForest.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
-              '$amountPrefix${CurrencyFormatter.format(transaction.amount)}',
-              style: TextStyle(
-                fontSize: 15,
+              title,
+              style: const TextStyle(
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: amountColor,
+                color: AppColors.brownEspresso,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.brownMocha,
               ),
             ),
           ],

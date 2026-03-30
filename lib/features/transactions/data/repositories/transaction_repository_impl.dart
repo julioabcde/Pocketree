@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:pocketree/core/error/error_mapper.dart';
 import 'package:pocketree/core/error/failures.dart';
 import 'package:pocketree/features/transactions/data/datasources/transaction_remote_datasource.dart';
+import 'package:pocketree/features/transactions/domain/entities/daily_summary.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_filter.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_summary.dart';
@@ -65,6 +66,22 @@ class TransactionRepositoryImpl implements TransactionRepository {
         filter: filter,
       );
       return Right(model.toEntity());
+    } catch (e) {
+      return mapExceptionToFailure(e);
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<DailySummary>>> getDailySummary({
+    required String month,
+    int? accountId,
+  }) async {
+    try {
+      final models = await remoteDatasource.getDailySummary(
+        month: month,
+        accountId: accountId,
+      );
+      return Right(models.map((model) => model.toEntity()).toList());
     } catch (e) {
       return mapExceptionToFailure(e);
     }
