@@ -46,6 +46,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   final GetCategoryByIdUseCase _getCategoryById = sl<GetCategoryByIdUseCase>();
 
   bool get _isTransferTransaction => widget.transaction.isTransfer;
+  bool get _isEditable => !_isTransferTransaction;
 
   @override
   void initState() {
@@ -146,339 +147,376 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         child: SafeArea(
           child: Column(
             children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: AppColors.primaryForest,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.primaryForest,
+                      ),
+                      onPressed: () => GoRouter.of(context).pop(),
                     ),
-                    onPressed: () => GoRouter.of(context).pop(),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Edit Transaction',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brownEspresso,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  children: [
+                    const SizedBox(height: 4),
+                    _buildTabSelector(),
+                    const SizedBox(height: 32),
+                    GestureDetector(
+                      onTap: _isEditable ? _pickAmount : null,
+                      child: Column(
+                        children: [
+                          Text(
+                            'TOTAL AMOUNT',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brownMocha,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            CurrencyFormatter.format(_amount),
+                            style: const TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brownEspresso,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    _buildDateRow(),
+                    _buildDivider(),
+                    _buildCategoryRow(),
+                    _buildDivider(),
+                    _buildAccountRow(),
+                    _buildDivider(),
+                    _buildNoteRow(),
+                    _buildDivider(),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: BlocBuilder<TransactionBloc, TransactionState>(
+                    builder: (context, state) {
+                      final isLoading =
+                          state is TransactionLoaded && state.isPerformingAction;
+
+                      return DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: _isTransferTransaction
+                              ? AppColors.neutralTaupe
+                              : AppColors.primaryForest,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: (_isTransferTransaction || isLoading)
+                              ? null
+                              : _saveTransaction,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            disabledBackgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.white,
+                                  ),
+                                )
+                              : Text(
+                                  _isTransferTransaction
+                                      ? 'TRANSFER CANNOT BE EDITED'
+                                      : 'UPDATE TRANSACTION',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Edit Transaction',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabSelector() {
+    return Opacity(
+      opacity: 0.7,
+      child: IgnorePointer(
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.neutralSand,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: _TransactionTab.values.map((tab) {
+              final isActive = _activeTab == tab;
+              final label = switch (tab) {
+                _TransactionTab.expense => 'Expense',
+                _TransactionTab.income => 'Income',
+                _TransactionTab.transfer => 'Transfer',
+              };
+
+              return Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.brownEspresso
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    label,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      color: isActive ? AppColors.white : AppColors.brownMocha,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateRow() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _isEditable ? _pickDate : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 22,
+              color: AppColors.primaryForest,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Date',
+                    style: TextStyle(fontSize: 13, color: AppColors.brownMocha),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatDisplayDate(_selectedDate),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.brownEspresso,
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: [
-                  const SizedBox(height: 4),
-                  Opacity(
-                    opacity: 0.7,
-                    child: Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.neutralSand,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: Row(
-                      children: _TransactionTab.values.map((tab) {
-                        final isActive = _activeTab == tab;
-                        final label = switch (tab) {
-                          _TransactionTab.expense => 'Expense',
-                          _TransactionTab.income => 'Income',
-                          _TransactionTab.transfer => 'Transfer',
-                        };
+            if (_isEditable)
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppColors.neutralTaupe,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                        return Expanded(
-                          child: IgnorePointer(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeInOut,
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? AppColors.brownEspresso
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(22),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isActive
-                                      ? AppColors.white
-                                      : AppColors.brownMocha,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+  Widget _buildCategoryRow() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _isEditable ? _pickCategory : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.shopping_bag_outlined,
+              size: 22,
+              color: AppColors.primaryForest,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Category',
+                    style: TextStyle(fontSize: 13, color: AppColors.brownMocha),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _selectedCategoryObj?.name ??
+                        (widget.transaction.categoryId != null
+                            ? 'Category #${widget.transaction.categoryId}'
+                            : 'Select category'),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: _selectedCategoryObj != null
+                          ? FontWeight.w500
+                          : FontWeight.w400,
+                      color: _selectedCategoryObj != null
+                          ? AppColors.brownEspresso
+                          : AppColors.brownMocha,
                     ),
-                  ),
-                  ),
-                  const SizedBox(height: 32),
-                  GestureDetector(
-                    onTap: _isTransferTransaction ? null : _pickAmount,
-                    child: Column(
-                      children: [
-                        Text(
-                          'TOTAL AMOUNT',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.brownMocha,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          CurrencyFormatter.format(_amount),
-                          style: const TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.brownEspresso,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _isTransferTransaction ? null : _pickDate,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 22,
-                            color: AppColors.primaryForest,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              _formatDisplayDate(_selectedDate),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.brownEspresso,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 22,
-                            color: _isTransferTransaction
-                                ? AppColors.neutralTaupe.withValues(alpha: 0.5)
-                                : AppColors.neutralTaupe,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    height: 0.5,
-                    thickness: 0.5,
-                    color: AppColors.neutralTaupe.withValues(alpha: 0.3),
-                  ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _isTransferTransaction ? null : _pickCategory,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.shopping_bag_outlined,
-                            size: 22,
-                            color: AppColors.primaryForest,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              _selectedCategoryObj?.name ??
-                                  (widget.transaction.categoryId != null
-                                      ? 'Category #${widget.transaction.categoryId}'
-                                      : 'Select category'),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: _selectedCategoryObj != null
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
-                                color: _selectedCategoryObj != null
-                                    ? AppColors.brownEspresso
-                                    : AppColors.brownMocha,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 22,
-                            color: _isTransferTransaction
-                                ? AppColors.neutralTaupe.withValues(alpha: 0.5)
-                                : AppColors.neutralTaupe,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    height: 0.5,
-                    thickness: 0.5,
-                    color: AppColors.neutralTaupe.withValues(alpha: 0.3),
-                  ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _isTransferTransaction ? null : _pickAccount,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 22,
-                            color: AppColors.primaryForest,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              _selectedAccountObj?.name ??
-                                  'Account #${widget.transaction.accountId}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.brownEspresso,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 22,
-                            color: _isTransferTransaction
-                                ? AppColors.neutralTaupe.withValues(alpha: 0.5)
-                                : AppColors.neutralTaupe,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Divider(
-                    height: 0.5,
-                    thickness: 0.5,
-                    color: AppColors.neutralTaupe.withValues(alpha: 0.3),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.edit_note_rounded,
-                          size: 22,
-                          color: AppColors.primaryForest,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextField(
-                            controller: _noteController,
-                            enabled: !_isTransferTransaction,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.brownEspresso,
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: 'Write a note...',
-                              hintStyle: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.brownMocha,
-                              ),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              isDense: true,
-                              filled: false,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    height: 0.5,
-                    thickness: 0.5,
-                    color: AppColors.neutralTaupe.withValues(alpha: 0.3),
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: BlocBuilder<TransactionBloc, TransactionState>(
-                  builder: (context, state) {
-                    final isLoading =
-                        state is TransactionLoaded && state.isPerformingAction;
-
-                    return DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _isTransferTransaction
-                            ? AppColors.neutralTaupe
-                            : AppColors.primaryForest,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: (_isTransferTransaction || isLoading)
-                            ? null
-                            : _saveTransaction,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          disabledBackgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.white,
-                                ),
-                              )
-                            : Text(
-                                _isTransferTransaction
-                                    ? 'TRANSFER CANNOT BE EDITED'
-                                    : 'UPDATE TRANSACTION',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                      ),
-                    );
-                  },
-                ),
+            if (_isEditable)
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppColors.neutralTaupe,
               ),
-            ),
-            ],
-          ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAccountRow() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _isEditable ? _pickAccount : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 22,
+              color: AppColors.primaryForest,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Account',
+                    style: TextStyle(fontSize: 13, color: AppColors.brownMocha),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _selectedAccountObj?.name ??
+                        'Account #${widget.transaction.accountId}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.brownEspresso,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_isEditable)
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppColors.neutralTaupe,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.edit_note_rounded,
+            size: 22,
+            color: AppColors.primaryForest,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: TextField(
+              controller: _noteController,
+              enabled: _isEditable,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                color: AppColors.brownEspresso,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Write a note...',
+                hintStyle: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.brownMocha,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+                filled: false,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      height: 0.5,
+      thickness: 0.5,
+      color: AppColors.neutralTaupe.withValues(alpha: 0.3),
     );
   }
 

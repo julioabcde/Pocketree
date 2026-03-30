@@ -17,6 +17,7 @@ import 'package:pocketree/features/splitbill/presentation/screens/splitbill_scre
 import 'package:pocketree/features/reports/presentation/screens/reports_screen.dart';
 import 'package:pocketree/features/settings/presentation/screens/settings_screen.dart';
 import 'package:pocketree/features/accounts/presentation/screens/accounts_screen.dart';
+import 'package:pocketree/features/transactions/presentation/screens/transactions_screen.dart';
 
 GoRouter createRouter(AuthBloc authBloc) {
   return GoRouter(
@@ -80,7 +81,7 @@ GoRouter createRouter(AuthBloc authBloc) {
                 path: '/transactions',
                 builder: (context, state) => BlocProvider(
                   create: (_) => sl<TransactionBloc>(),
-                  child: const AddTransactionScreen(),
+                  child: const TransactionsScreen(),
                 ),
               ),
             ],

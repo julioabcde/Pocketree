@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:pocketree/core/error/failures.dart';
+import 'package:pocketree/features/transactions/domain/entities/daily_summary.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_filter.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_summary.dart';
@@ -24,6 +25,11 @@ abstract class TransactionRepository {
 
   Future<Either<Failure, TransactionSummary>> getTransactionSummary({
     TransactionFilter filter = const TransactionFilter(),
+  });
+
+  Future<Either<Failure, List<DailySummary>>> getDailySummary({
+    required String month,
+    int? accountId,
   });
 
   Future<Either<Failure, TransferResult>> createTransfer({

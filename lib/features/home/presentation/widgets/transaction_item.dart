@@ -9,54 +9,56 @@ class TransactionItem extends StatelessWidget {
   final Transaction transaction;
   final bool showDivider;
   final VoidCallback? onOptionsTap;
+  final String? transferMetaLabel;
 
   const TransactionItem({
     super.key,
     required this.transaction,
     this.showDivider = true,
     this.onOptionsTap,
+    this.transferMetaLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final isIncome = transaction.type == TransactionType.income;
     final isTransfer = transaction.isTransfer;
+    final note = transaction.note?.trim();
+    final hasNote = note != null && note.isNotEmpty;
+    final showNoteAsPrimary =
+        hasNote && !(isTransfer && note.toLowerCase() == 'transfer');
+    final hasOptions = !isTransfer && onOptionsTap != null;
 
-    // Icon selection 
+    // Icon selection
     final IconData icon = isTransfer
         ? Icons.swap_horiz_rounded
         : isIncome
-            ? Icons.arrow_downward_rounded
-            : Icons.arrow_upward_rounded;
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
 
-    // Label logic 
-    final String primaryLabel = transaction.note?.isNotEmpty == true
-        ? transaction.note!
+    // Label logic
+    final String primaryLabel = showNoteAsPrimary
+        ? note
         : isTransfer
-            ? 'Transfer'
-            : isIncome
-                ? 'Income'
-                : 'Expense';
+        ? 'Transfer'
+        : isIncome
+        ? 'Income'
+        : 'Expense';
 
-    final String? secondaryLabel = transaction.note?.isNotEmpty == true
-        ? (isTransfer
-            ? 'Transfer'
-            : isIncome
-                ? 'Income'
-                : 'Expense')
+    final String? secondaryLabel = isTransfer
+        ? transferMetaLabel
+        : showNoteAsPrimary
+        ? (isIncome ? 'Income' : 'Expense')
         : null;
 
-    // Amount formatting 
-    final String amountPrefix = isTransfer
-        ? ''
-        : isIncome
-            ? '+'
-            : '-';
+    // Amount formatting
+    final String amountPrefix = isIncome ? '+' : '-';
     final String amountText =
         '$amountPrefix${CurrencyFormatter.format(transaction.amount)}';
 
-    final String timeLabel =
-        DateFormat('hh:mm a').format(transaction.createdAt);
+    final String timeLabel = DateFormat(
+      'hh:mm a',
+    ).format(transaction.createdAt);
 
     return Container(
       color: AppColors.neutralCream,
@@ -67,7 +69,7 @@ class TransactionItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             child: Row(
               children: [
-                //  Leading icon 
+                //  Leading icon
                 Container(
                   width: 48,
                   height: 48,
@@ -79,7 +81,7 @@ class TransactionItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 14),
 
-                //  Middle: label + note 
+                //  Middle: label + note
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +113,7 @@ class TransactionItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                //  Trailing: amount + time + options 
+                //  Trailing: amount + time + options
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -138,12 +140,14 @@ class TransactionItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: onOptionsTap,
-                      child: const Padding(
+                      onTap: hasOptions ? onOptionsTap : null,
+                      child: Padding(
                         padding: EdgeInsets.all(8),
                         child: Icon(
                           Icons.more_vert_rounded,
-                          color: AppColors.neutralTaupe,
+                          color: hasOptions
+                              ? AppColors.neutralTaupe
+                              : AppColors.neutralTaupe.withValues(alpha: 0.35),
                           size: 20,
                         ),
                       ),
@@ -154,7 +158,7 @@ class TransactionItem extends StatelessWidget {
             ),
           ),
 
-          //  Divider 
+          //  Divider
           if (showDivider)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
