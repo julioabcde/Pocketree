@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pocketree/core/di/injection_container.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
+import 'package:pocketree/features/home/presentation/bloc/home_bloc.dart';
+import 'package:pocketree/features/home/presentation/bloc/home_event.dart';
+import 'package:pocketree/features/recurring/presentation/bloc/recurring_bloc.dart';
+import 'package:pocketree/features/recurring/presentation/bloc/recurring_event.dart';
+import 'package:pocketree/features/recurring/presentation/bloc/recurring_state.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/calender_bloc.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/calender_event.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/calender_state.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
+import 'package:pocketree/features/transactions/presentation/bloc/transaction_state.dart';
+import 'package:pocketree/features/transactions/presentation/screens/calender_tab_view.dart';
+import 'package:pocketree/features/transactions/presentation/screens/subscriptions_tab_view.dart';
 
 enum _TransactionsTab { calendar, subscriptions, shared }
 
@@ -10,17 +25,162 @@ class TransactionsScreen extends StatefulWidget {
   State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> {
+class _TransactionsScreenState extends State<TransactionsScreen>
+    with WidgetsBindingObserver {
+  late final CalendarBloc _calendarBloc;
+  late final TransactionBloc _transactionBloc;
+  late final RecurringBloc _recurringBloc;
+
   _TransactionsTab _activeTab = _TransactionsTab.calendar;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    _calendarBloc = sl<CalendarBloc>()
+      ..add(CalendarMonthRequested(month: DateTime.now()));
+    _transactionBloc = sl<TransactionBloc>();
+    _recurringBloc = sl<RecurringBloc>();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _calendarBloc.close();
+    _transactionBloc.close();
+    _recurringBloc.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncMonthToToday();
+    }
+  }
+
+  void _syncMonthToToday() {
+    final now = DateTime.now();
+    final calendarState = _calendarBloc.state;
+
+    if (calendarState is CalendarLoaded) {
+      final isSameMonth =
+          calendarState.currentMonth.year == now.year &&
+          calendarState.currentMonth.month == now.month;
+
+      if (!isSameMonth) {
+        _calendarBloc.add(CalendarMonthRequested(month: now));
+      }
+    } else if (calendarState is CalendarInitial) {
+      _calendarBloc.add(CalendarMonthRequested(month: now));
+    }
+  }
+
+  void _refreshCurrentDay() {
+    final calendarState = _calendarBloc.state;
+    if (calendarState is CalendarLoaded) {
+      _calendarBloc.add(CalendarDaySelected(date: calendarState.selectedDate));
+    }
+  }
+
+  void _onTabChanged(_TransactionsTab tab) {
+    setState(() => _activeTab = tab);
+    if (tab == _TransactionsTab.calendar) {
+      _syncMonthToToday();
+      _refreshCurrentDay();
+    }
+    if (tab == _TransactionsTab.subscriptions) {
+      _recurringBloc.add(const RecurringDataRequested());
+    }
+  }
+
+  void _refreshCalendarMonth() {
+    final calendarState = _calendarBloc.state;
+    if (calendarState is CalendarLoaded) {
+      _calendarBloc
+        ..add(CalendarMonthRequested(month: calendarState.currentMonth))
+        ..add(CalendarDaySelected(date: calendarState.selectedDate));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _calendarBloc),
+        BlocProvider.value(value: _transactionBloc),
+        BlocProvider.value(value: _recurringBloc),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          // When a transaction is mutated here, also refresh HomeBloc.
+          // HomeBloc is a lazySingleton so sl() returns the same instance
+          // that HomeScreen is using.
+          BlocListener<TransactionBloc, TransactionState>(
+            listener: (context, state) {
+              if (state is TransactionActionSuccess) {
+                sl<HomeBloc>().add(const HomeDataRequested());
+              }
+            },
+          ),
+          // When a recurring is executed/created, a real transaction is
+          // created on the backend — refresh the calendar to reflect it.
+          BlocListener<RecurringBloc, RecurringState>(
+            listener: (context, state) {
+              if (state is RecurringActionSuccess) {
+                _refreshCalendarMonth();
+              }
+            },
+          ),
+        ],
+        child: _TransactionsView(
+          activeTab: _activeTab,
+          onTabChanged: _onTabChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionsView extends StatelessWidget {
+  final _TransactionsTab activeTab;
+  final ValueChanged<_TransactionsTab> onTabChanged;
+
+  const _TransactionsView({
+    required this.activeTab,
+    required this.onTabChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.neutralCream,
+      floatingActionButton: activeTab == _TransactionsTab.subscriptions
+          ? FloatingActionButton(
+              heroTag: 'addRecurring',
+              onPressed: () async {
+                final created =
+                    await GoRouter.of(context).push<bool>('/add-recurring');
+                if (created == true && context.mounted) {
+                  context
+                      .read<RecurringBloc>()
+                      .add(const RecurringDataRequested());
+                }
+              },
+              backgroundColor: AppColors.brownEspresso,
+              child: const Icon(
+                Icons.add_rounded,
+                color: AppColors.white,
+                size: 28,
+              ),
+            )
+          : null,
       body: SafeArea(
         child: Column(
           children: [
-            //  Header 
+            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
               child: Row(
@@ -51,20 +211,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             const SizedBox(height: 16),
 
-            //  Tab Switcher 
+            // Tab Switcher
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _buildTabSwitcher(),
+              child: _TabSwitcher(
+                activeTab: activeTab,
+                onTabChanged: onTabChanged,
+              ),
             ),
             const SizedBox(height: 24),
 
-            //  Tab Content 
+            // Tab Content
             Expanded(
-              child: switch (_activeTab) {
-                _TransactionsTab.calendar => _buildCalendarPlaceholder(),
-                _TransactionsTab.subscriptions =>
-                  _buildSubscriptionsPlaceholder(),
-                _TransactionsTab.shared => _buildSharedPlaceholder(),
+              child: switch (activeTab) {
+                _TransactionsTab.calendar => const CalendarTabView(),
+                _TransactionsTab.subscriptions => const SubscriptionsTabView(),
+                _TransactionsTab.shared => const _PlaceholderTab(
+                  icon: Icons.group_outlined,
+                  title: 'Shared Expenses',
+                  subtitle: 'View your split bill history',
+                ),
               },
             ),
           ],
@@ -72,10 +238,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ),
     );
   }
+}
 
-  //  Tab Switcher 
+// ─
+// Tab switcher widget
+// ─
+class _TabSwitcher extends StatelessWidget {
+  final _TransactionsTab activeTab;
+  final ValueChanged<_TransactionsTab> onTabChanged;
 
-  Widget _buildTabSwitcher() {
+  const _TabSwitcher({required this.activeTab, required this.onTabChanged});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -85,7 +260,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       padding: const EdgeInsets.all(4),
       child: Row(
         children: _TransactionsTab.values.map((tab) {
-          final isActive = _activeTab == tab;
+          final isActive = activeTab == tab;
           final label = switch (tab) {
             _TransactionsTab.calendar => 'Calendar',
             _TransactionsTab.subscriptions => 'Subscriptions',
@@ -94,25 +269,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
           return Expanded(
             child: GestureDetector(
-              onTap: () {
-                if (tab == _activeTab) return;
-                setState(() => _activeTab = tab);
-              },
+              onTap: () => onTabChanged(tab),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.brownEspresso : Colors.transparent,
+                  color: isActive
+                      ? AppColors.brownEspresso
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(22),
-                  boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : [],
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -120,9 +285,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isActive
-                        ? AppColors.white
-                        : AppColors.brownMocha,
+                    color: isActive ? AppColors.white : AppColors.brownMocha,
                   ),
                 ),
               ),
@@ -132,36 +295,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ),
     );
   }
-
-  //  Placeholder Builders 
-
-  Widget _buildCalendarPlaceholder() {
-    return _PlaceholderTab(
-      icon: Icons.calendar_month_outlined,
-      title: 'Calendar View',
-      subtitle: 'View your daily transactions on a calendar',
-    );
-  }
-
-  Widget _buildSubscriptionsPlaceholder() {
-    return _PlaceholderTab(
-      icon: Icons.autorenew_rounded,
-      title: 'Subscriptions',
-      subtitle: 'Track your recurring payments and subscriptions',
-    );
-  }
-
-  Widget _buildSharedPlaceholder() {
-    return _PlaceholderTab(
-      icon: Icons.group_outlined,
-      title: 'Shared Expenses',
-      subtitle: 'View your split bill history',
-    );
-  }
 }
 
-//  Reusable placeholder widget 
-
+// ─
+// Generic placeholder for unbuilt tabs
+// ─
 class _PlaceholderTab extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -207,10 +345,7 @@ class _PlaceholderTab extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.brownMocha,
-              ),
+              style: const TextStyle(fontSize: 14, color: AppColors.brownMocha),
             ),
           ],
         ),

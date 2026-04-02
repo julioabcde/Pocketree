@@ -9,6 +9,8 @@ import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_state.dart';
 import 'package:pocketree/features/auth/presentation/screens/auth_screen.dart';
 import 'package:pocketree/features/home/presentation/screens/home_screen.dart';
+import 'package:pocketree/features/recurring/presentation/bloc/recurring_bloc.dart';
+import 'package:pocketree/features/recurring/presentation/screens/add_recurring_screen.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
 import 'package:pocketree/features/transactions/presentation/screens/add_transactions_screen.dart';
 import 'package:pocketree/features/transactions/presentation/screens/edit_transaction_screen.dart';
@@ -48,6 +50,13 @@ GoRouter createRouter(AuthBloc authBloc) {
         builder: (context, state) => BlocProvider(
           create: (_) => sl<TransactionBloc>(),
           child: const AddTransactionScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/add-recurring',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<RecurringBloc>(),
+          child: const AddRecurringScreen(),
         ),
       ),
       GoRoute(

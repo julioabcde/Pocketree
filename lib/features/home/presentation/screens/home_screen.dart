@@ -22,9 +22,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (_) => sl<HomeBloc>()..add(const HomeDataRequested()),
-        ),
+        BlocProvider.value(value: sl<HomeBloc>()..add(const HomeDataRequested())),
         BlocProvider(create: (_) => sl<TransactionBloc>()),
       ],
       child: const _HomeView(),
