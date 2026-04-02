@@ -249,9 +249,9 @@ class TransactionRemoteDatasourceImpl implements TransactionRemoteDatasource {
       if (filter.accountId != null) 'account_id': filter.accountId,
       if (filter.categoryId != null) 'category_id': filter.categoryId,
       if (filter.startDate != null)
-        'date_from': _dateFormat.format(filter.startDate!),
+        'start_date': _dateFormat.format(filter.startDate!),
       if (filter.endDate != null)
-        'date_to': _dateFormat.format(filter.endDate!),
+        'end_date': _dateFormat.format(filter.endDate!),
     };
   }
 }

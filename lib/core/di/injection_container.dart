@@ -1,5 +1,3 @@
-// lib/core/di/injection_container.dart
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:pocketree/core/network/dio_client.dart';
@@ -33,6 +31,15 @@ import 'package:pocketree/features/categories/domain/usecases/update_category_us
 import 'package:pocketree/features/categories/presentation/bloc/category_bloc.dart';
 import 'package:pocketree/features/home/domain/usecases/get_home_data_usecase.dart';
 import 'package:pocketree/features/home/presentation/bloc/home_bloc.dart';
+import 'package:pocketree/features/recurring/data/datasources/recurring_remote_datasource.dart';
+import 'package:pocketree/features/recurring/data/repositories/recurring_repository_impl.dart';
+import 'package:pocketree/features/recurring/domain/repositories/recurring_repository.dart';
+import 'package:pocketree/features/recurring/domain/usecases/create_recurring_usecase.dart';
+import 'package:pocketree/features/recurring/domain/usecases/delete_recurring_usecase.dart';
+import 'package:pocketree/features/recurring/domain/usecases/execute_recurring_usecase.dart';
+import 'package:pocketree/features/recurring/domain/usecases/get_recurring_usecase.dart';
+import 'package:pocketree/features/recurring/domain/usecases/update_recurring_usecase.dart';
+import 'package:pocketree/features/recurring/presentation/bloc/recurring_bloc.dart';
 import 'package:pocketree/features/transactions/data/datasources/transaction_remote_datasource.dart';
 import 'package:pocketree/features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'package:pocketree/features/transactions/domain/repositories/transaction_repository.dart';
@@ -72,6 +79,9 @@ Future<void> setupDependencies() async {
   sl.registerLazySingleton<TransactionRemoteDatasource>(
     () => TransactionRemoteDatasourceImpl(sl()),
   );
+  sl.registerLazySingleton<RecurringRemoteDatasource>(
+    () => RecurringRemoteDatasourceImpl(sl()),
+  );
 
   //  Repositories
   sl.registerLazySingleton<AuthRepository>(
@@ -85,6 +95,9 @@ Future<void> setupDependencies() async {
   );
   sl.registerLazySingleton<TransactionRepository>(
     () => TransactionRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<RecurringRepository>(
+    () => RecurringRepositoryImpl(sl()),
   );
 
   //  Use Cases
@@ -116,6 +129,12 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => DeleteTransactionUseCase(sl()));
 
   sl.registerFactory(() => GetHomeDataUseCase(sl(), sl()));
+
+  sl.registerFactory(() => GetRecurringUseCase(sl()));
+  sl.registerFactory(() => DeleteRecurringUseCase(sl()));
+  sl.registerFactory(() => CreateRecurringUseCase(sl()));
+  sl.registerFactory(() => UpdateRecurringUseCase(sl()));
+  sl.registerFactory(() => ExecuteRecurringUseCase(sl()));
 
   //  BLoCs
   sl.registerFactory(
@@ -165,5 +184,15 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  sl.registerFactory(() => HomeBloc(getHomeData: sl()));
+  sl.registerLazySingleton(() => HomeBloc(getHomeData: sl()));
+
+  sl.registerFactory(
+    () => RecurringBloc(
+      getRecurring: sl(),
+      deleteRecurring: sl(),
+      createRecurring: sl(),
+      updateRecurring: sl(),
+      executeRecurring: sl(),
+    ),
+  );
 }
