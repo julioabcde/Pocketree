@@ -124,13 +124,20 @@ class _AccountsView extends StatelessWidget {
     final creditCardAccounts = state.creditCardAccounts;
     final isEmpty = state.accounts.isEmpty;
 
-    return ListView(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 8, bottom: 32),
-      children: [
-        // Summary Card
+    return RefreshIndicator(
+      color: AppColors.primaryForest,
+      backgroundColor: AppColors.white,
+      onRefresh: () {
+        final event = AccountDataRefreshed();
+        context.read<AccountBloc>().add(event);
+        return event.completer.future;
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(left: 24, right: 24, top: 8, bottom: 32),
+        children: [
         AccountSummaryCard(summary: state.summary),
 
-        // Cash Section
         if (cashAccounts.isNotEmpty) ...[
           const SizedBox(height: 28),
           AccountListSection(
@@ -141,7 +148,6 @@ class _AccountsView extends StatelessWidget {
           ),
         ],
 
-        // Bank Account Section
         if (bankAccounts.isNotEmpty) ...[
           const SizedBox(height: 28),
           AccountListSection(
@@ -152,7 +158,6 @@ class _AccountsView extends StatelessWidget {
           ),
         ],
 
-        // E-Wallet Section
         if (eWalletAccounts.isNotEmpty) ...[
           const SizedBox(height: 28),
           AccountListSection(
@@ -163,7 +168,6 @@ class _AccountsView extends StatelessWidget {
           ),
         ],
 
-        // Credit Card Section
         if (creditCardAccounts.isNotEmpty) ...[
           const SizedBox(height: 28),
           AccountListSection(
@@ -174,7 +178,6 @@ class _AccountsView extends StatelessWidget {
           ),
         ],
 
-        // Empty State
         if (isEmpty) ...[
           const SizedBox(height: 60),
           Center(
@@ -204,6 +207,7 @@ class _AccountsView extends StatelessWidget {
           ),
         ],
       ],
+      ),
     );
   }
 
@@ -242,7 +246,6 @@ class _AccountsView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Drag handle
                 Container(
                   width: 40,
                   height: 4,
@@ -253,7 +256,6 @@ class _AccountsView extends StatelessWidget {
                   ),
                 ),
 
-                // Edit
                 ListTile(
                   leading: const Icon(
                     Icons.edit_outlined,
@@ -266,7 +268,6 @@ class _AccountsView extends StatelessWidget {
                   },
                 ),
 
-                // Delete
                 ListTile(
                   leading: const Icon(
                     Icons.delete_outline_rounded,

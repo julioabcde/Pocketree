@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:pocketree/features/categories/domain/entities/category_type.dart';
 
@@ -12,6 +14,17 @@ class CategoryDataRequested extends CategoryEvent {
   final CategoryType? type;
 
   const CategoryDataRequested({this.type});
+
+  @override
+  List<Object?> get props => [type];
+}
+
+class CategoryDataRefreshed extends CategoryEvent {
+  final CategoryType? type;
+  final Completer<void> completer;
+
+  CategoryDataRefreshed({this.type, Completer<void>? completer})
+      : completer = completer ?? Completer<void>();
 
   @override
   List<Object?> get props => [type];

@@ -40,6 +40,19 @@ import 'package:pocketree/features/recurring/domain/usecases/execute_recurring_u
 import 'package:pocketree/features/recurring/domain/usecases/get_recurring_usecase.dart';
 import 'package:pocketree/features/recurring/domain/usecases/update_recurring_usecase.dart';
 import 'package:pocketree/features/recurring/presentation/bloc/recurring_bloc.dart';
+import 'package:pocketree/features/splitbill/data/datasources/splitbill_remote_datasource.dart';
+import 'package:pocketree/features/splitbill/data/repositories/splitbill_repository_impl.dart';
+import 'package:pocketree/features/splitbill/domain/repositories/splitbill_repository.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/calculate_split_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/create_split_bill_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/delete_split_bill_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/get_split_bill_detail_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/get_split_bills_summary_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/get_split_bills_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/scan_receipt_usecase.dart';
+import 'package:pocketree/features/splitbill/domain/usecases/settle_debt_usecase.dart';
+import 'package:pocketree/features/splitbill/presentation/bloc/splitbill_bloc.dart';
+import 'package:pocketree/features/splitbill/presentation/bloc/splitbill_detail_bloc.dart';
 import 'package:pocketree/features/transactions/data/datasources/transaction_remote_datasource.dart';
 import 'package:pocketree/features/transactions/data/repositories/transaction_repository_impl.dart';
 import 'package:pocketree/features/transactions/domain/repositories/transaction_repository.dart';
@@ -51,22 +64,24 @@ import 'package:pocketree/features/transactions/domain/usecases/get_transaction_
 import 'package:pocketree/features/transactions/domain/usecases/get_transaction_summary_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/get_transactions_usecase.dart';
 import 'package:pocketree/features/transactions/domain/usecases/update_transaction_usecase.dart';
+import 'package:pocketree/features/reports/data/datasources/reports_remote_datasource.dart';
+import 'package:pocketree/features/reports/data/repositories/reports_repository_impl.dart';
+import 'package:pocketree/features/reports/domain/repositories/reports_repository.dart';
+import 'package:pocketree/features/reports/domain/usecases/get_reports_data_usecase.dart';
+import 'package:pocketree/features/reports/presentation/bloc/reports_bloc.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/calender_bloc.dart';
 import 'package:pocketree/features/transactions/presentation/bloc/transaction_bloc.dart';
 
 final sl = GetIt.instance;
 
 Future<void> setupDependencies() async {
-  // Storage
   sl.registerLazySingleton<FlutterSecureStorage>(
     () => const FlutterSecureStorage(),
   );
   sl.registerLazySingleton<TokenStorage>(() => TokenStorage(sl()));
 
-  // Network
   sl.registerLazySingleton(() => DioClient.create(tokenStorage: sl()));
 
-  //  Datasources
   sl.registerLazySingleton<AuthRemoteDatasource>(
     () => AuthRemoteDatasourceImpl(sl()),
   );
@@ -82,8 +97,13 @@ Future<void> setupDependencies() async {
   sl.registerLazySingleton<RecurringRemoteDatasource>(
     () => RecurringRemoteDatasourceImpl(sl()),
   );
+  sl.registerLazySingleton<SplitBillRemoteDatasource>(
+    () => SplitBillRemoteDatasourceImpl(sl()),
+  );
+  sl.registerLazySingleton<ReportsRemoteDatasource>(
+    () => ReportsRemoteDatasourceImpl(sl()),
+  );
 
-  //  Repositories
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl()),
   );
@@ -99,8 +119,13 @@ Future<void> setupDependencies() async {
   sl.registerLazySingleton<RecurringRepository>(
     () => RecurringRepositoryImpl(sl()),
   );
+  sl.registerLazySingleton<SplitBillRepository>(
+    () => SplitBillRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<ReportsRepository>(
+    () => ReportsRepositoryImpl(sl()),
+  );
 
-  //  Use Cases
   sl.registerFactory(() => LogInUseCase(sl()));
   sl.registerFactory(() => LogOutUseCase(sl()));
   sl.registerFactory(() => RegisterUseCase(sl()));
@@ -136,7 +161,17 @@ Future<void> setupDependencies() async {
   sl.registerFactory(() => UpdateRecurringUseCase(sl()));
   sl.registerFactory(() => ExecuteRecurringUseCase(sl()));
 
-  //  BLoCs
+  sl.registerFactory(() => CreateSplitBillUseCase(sl()));
+  sl.registerFactory(() => GetSplitBillsUseCase(sl()));
+  sl.registerFactory(() => GetSplitBillDetailUseCase(sl()));
+  sl.registerFactory(() => CalculateSplitUseCase(sl()));
+  sl.registerFactory(() => SettleDebtUseCase(sl()));
+  sl.registerFactory(() => DeleteSplitBillUseCase(sl()));
+  sl.registerFactory(() => GetSplitBillsSummaryUseCase(sl()));
+  sl.registerFactory(() => ScanReceiptUseCase(sl()));
+
+  sl.registerFactory(() => GetReportsDataUseCase(sl()));
+
   sl.registerFactory(
     () => AuthBloc(
       logIn: sl(),
@@ -194,5 +229,26 @@ Future<void> setupDependencies() async {
       updateRecurring: sl(),
       executeRecurring: sl(),
     ),
+  );
+
+  sl.registerFactory(
+    () => SplitBillBloc(
+      getSplitBillsSummary: sl(),
+      createSplitBill: sl(),
+      deleteSplitBill: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => SplitBillDetailBloc(
+      getSplitBillDetail: sl(),
+      calculateSplit: sl(),
+      settleDebt: sl(),
+      deleteSplitBill: sl(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => ReportsBloc(getReportsData: sl()),
   );
 }

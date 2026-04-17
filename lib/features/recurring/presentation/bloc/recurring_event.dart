@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:pocketree/features/recurring/domain/entities/recurring_transaction.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_type.dart';
@@ -10,6 +12,16 @@ abstract class RecurringEvent extends Equatable {
 
 class RecurringDataRequested extends RecurringEvent {
   const RecurringDataRequested();
+}
+
+class RecurringDataRefreshed extends RecurringEvent {
+  final Completer<void> completer;
+
+  RecurringDataRefreshed({Completer<void>? completer})
+      : completer = completer ?? Completer<void>();
+
+  @override
+  List<Object?> get props => [];
 }
 
 class RecurringDeleteRequested extends RecurringEvent {

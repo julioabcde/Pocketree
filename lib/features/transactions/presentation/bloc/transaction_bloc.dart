@@ -1,4 +1,3 @@
-// lib/features/transactions/presentation/bloc/transaction_bloc.dart
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pocketree/core/error/failures.dart';
@@ -31,6 +30,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     required this.createTransfer,
   }) : super(const TransactionInitial()) {
     on<TransactionDataRequested>(_onDataRequested);
+    on<TransactionDataRefreshed>(_onDataRefreshed);
     on<TransactionNextPageRequested>(_onNextPageRequested);
     on<TransactionCreateRequested>(_onCreateRequested);
     on<TransactionUpdateRequested>(_onUpdateRequested);
@@ -45,10 +45,25 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
     if (state is! TransactionLoaded) {
       emit(const TransactionLoading());
     }
+    await _fetchAndEmit(emit, event.filter);
+  }
 
+  Future<void> _onDataRefreshed(
+    TransactionDataRefreshed event,
+    Emitter<TransactionState> emit,
+  ) async {
+    final filter = event.filter ?? _currentFilter;
+    await _fetchAndEmit(emit, filter);
+    if (!event.completer.isCompleted) event.completer.complete();
+  }
+
+  Future<void> _fetchAndEmit(
+    Emitter<TransactionState> emit,
+    TransactionFilter filter,
+  ) async {
     final (transactionsResult, summaryResult) = await (
-      getTransactions(filter: event.filter, limit: _pageSize),
-      getTransactionSummary(filter: event.filter),
+      getTransactions(filter: filter, limit: _pageSize),
+      getTransactionSummary(filter: filter),
     ).wait;
 
     transactionsResult.fold(
@@ -59,7 +74,7 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
           TransactionLoaded(
             transactions: transactions,
             summary: summary,
-            filter: event.filter,
+            filter: filter,
             hasReachedEnd: transactions.length < _pageSize,
           ),
         ),

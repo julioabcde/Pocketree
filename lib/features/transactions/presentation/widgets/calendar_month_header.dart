@@ -59,7 +59,6 @@ class CalendarMonthHeader extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          const Text(' ', style: _labelStyle), 
           Text(label, style: _labelStyle),
           const SizedBox(height: 4),
           Text(

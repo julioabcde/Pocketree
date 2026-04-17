@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
 
-/// Shows a calculator-style numpad bottom sheet for amount input.
-///
-/// Returns the entered amount as [double], or `null` if dismissed.
 Future<double?> showAmountNumpad(BuildContext context, {double? initialValue}) {
   return showModalBottomSheet<double>(
     context: context,
@@ -38,9 +35,6 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
     }
   }
 
-  // Conversion helpers
-
-  /// Converts double → input string (50000.5 → "50000,5")
   String _doubleToInput(double value) {
     if (value == value.truncateToDouble()) {
       return value.toInt().toString();
@@ -52,14 +46,11 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
         .replaceAll('.', ',');
   }
 
-  /// Converts input string → double ("50000,5" → 50000.5)
   double _inputToDouble(String input) {
     if (input.isEmpty) return 0;
     return double.tryParse(input.replaceAll(',', '.')) ?? 0;
   }
 
-  /// Formats input for display with IDR-style separators
-  /// ("50000,5" → "50.000,5")
   String _formatDisplay(String input) {
     if (input.isEmpty || input == '0') return '0';
 
@@ -86,8 +77,6 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
     return result.toString();
   }
 
-  // Calculator actions
-
   void _onDigit(String digit) {
     setState(() {
       if (_hasResult) {
@@ -101,11 +90,9 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
       } else if (_input == '0') {
         _input = digit;
       } else {
-        // Max 2 decimal places
         if (_input.contains(',') && _input.split(',')[1].length >= 2) {
           return;
         }
-        // Max 12 integer digits
         if (!_input.contains(',') && _input.replaceAll('-', '').length >= 12) {
           return;
         }
@@ -135,14 +122,12 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
       final current = _inputToDouble(_input);
 
       if (_firstOperand != null && _operator != null && !_waitingForOperand) {
-        // Chained operation: evaluate pending first
         final result = _evaluate(_firstOperand!, _operator!, current);
         _firstOperand = result;
         _input = _doubleToInput(result);
       } else if (!_waitingForOperand) {
         _firstOperand = current;
       }
-      // If _waitingForOperand, just swap the operator
 
       _operator = op;
       _waitingForOperand = true;
@@ -206,8 +191,6 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
 
   bool get _showEquals => _operator != null;
 
-  // Build
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -262,14 +245,12 @@ class _AmountNumpadSheetState extends State<_AmountNumpadSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Expression line (pending operation)
             if (_firstOperand != null && _operator != null)
               Text(
                 '${_formatDisplay(_doubleToInput(_firstOperand!))} $_operator',
                 style: TextStyle(fontSize: 14, color: AppColors.brownMocha),
               ),
             const SizedBox(height: 4),
-            // Current value
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,

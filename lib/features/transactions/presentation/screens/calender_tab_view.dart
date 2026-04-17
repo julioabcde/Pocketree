@@ -22,7 +22,6 @@ class CalendarTabView extends StatelessWidget {
     return BlocListener<TransactionBloc, TransactionState>(
       listener: (context, state) {
         if (state is TransactionActionSuccess) {
-          // Refresh both the month summary and selected day after any mutation
           final calendarState = context.read<CalendarBloc>().state;
           if (calendarState is CalendarLoaded) {
             context.read<CalendarBloc>()
@@ -58,14 +57,12 @@ class CalendarTabView extends StatelessWidget {
       },
       child: BlocBuilder<CalendarBloc, CalendarState>(
         builder: (context, state) {
-          //  Loading
           if (state is CalendarLoading || state is CalendarInitial) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.primaryForest),
             );
           }
 
-          //  Error
           if (state is CalendarError) {
             return Center(
               child: Padding(
@@ -91,7 +88,6 @@ class CalendarTabView extends StatelessWidget {
             );
           }
 
-          //  Loaded ─
           if (state is CalendarLoaded) {
             return _CalendarContent(state: state);
           }
@@ -110,17 +106,24 @@ class _CalendarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        //  1. Month Summary Header
+    return RefreshIndicator(
+      color: AppColors.primaryForest,
+      backgroundColor: AppColors.white,
+      onRefresh: () {
+        final event = CalendarDataRefreshed();
+        context.read<CalendarBloc>().add(event);
+        return event.completer.future;
+      },
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
             child: CalendarMonthHeader(summary: state.monthlySummary),
           ),
         ),
 
-        //  2. Thin Divider ─
         SliverToBoxAdapter(
           child: Divider(
             height: 1,
@@ -129,10 +132,9 @@ class _CalendarContent extends StatelessWidget {
           ),
         ),
 
-        //  3. Calendar Grid
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
             child: CalendarGrid(
               currentMonth: state.currentMonth,
               selectedDate: state.selectedDate,
@@ -164,7 +166,6 @@ class _CalendarContent extends StatelessWidget {
           ),
         ),
 
-        //  4. Pinned "Daily Transactions" Header ─
         SliverPersistentHeader(
           pinned: true,
           delegate: DailyTransactionHeaderDelegate(
@@ -172,7 +173,6 @@ class _CalendarContent extends StatelessWidget {
           ),
         ),
 
-        //  5. Transaction List
         if (state.isLoadingDay)
           const SliverToBoxAdapter(
             child: Padding(
@@ -193,7 +193,6 @@ class _CalendarContent extends StatelessWidget {
               final transactions = state.selectedDayTransactions;
               final transaction = transactions[index];
 
-              // Build local lookup for transfer pair resolution
               final transactionById = {for (final t in transactions) t.id: t};
 
               final transferMetaLabel = _buildTransferMetaLabel(
@@ -212,9 +211,9 @@ class _CalendarContent extends StatelessWidget {
             }, childCount: state.selectedDayTransactions.length),
           ),
 
-        //  6. Bottom padding
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
+      ),
     );
   }
 
@@ -296,18 +295,12 @@ class _CalendarContent extends StatelessWidget {
                   ),
                   title: const Text('Edit Transaction'),
                   onTap: () async {
-                    // Close the bottom sheet first
                     Navigator.pop(context);
 
-                    // Push edit screen and wait for result
-                    // EditTransactionScreen uses its OWN TransactionBloc,
-                    // so we can't rely on BlocListener — we must check the
-                    // return value manually.
                     final updated = await GoRouter.of(
                       context,
                     ).push<bool>('/edit-transaction', extra: transaction);
 
-                    // Guard: context might be stale after the await
                     if (updated == true && context.mounted) {
                       final calendarState = context.read<CalendarBloc>().state;
                       if (calendarState is CalendarLoaded) {

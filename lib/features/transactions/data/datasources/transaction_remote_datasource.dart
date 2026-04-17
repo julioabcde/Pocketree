@@ -231,7 +231,6 @@ class TransactionRemoteDatasourceImpl implements TransactionRemoteDatasource {
     }
   }
 
-  // Query Param Builders
   Map<String, dynamic> _buildTransactionParams(TransactionFilter filter) {
     return <String, dynamic>{
       if (filter.accountId != null) 'account_id': filter.accountId,

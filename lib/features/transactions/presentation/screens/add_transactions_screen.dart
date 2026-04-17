@@ -41,8 +41,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
-  //  Reset
-
   void _resetSelections() {
     setState(() {
       _amount = 0;
@@ -54,8 +52,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
   }
 
-  //  Save
-
   void _saveTransaction() {
     if (_amount <= 0) {
       _showErrorSnackbar('Please enter a valid amount');
@@ -64,7 +60,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     final bloc = context.read<TransactionBloc>();
 
-    // Transfer mode
     if (_activeTab == _TransactionTab.transfer) {
       if (_selectedAccountObj == null) {
         _showErrorSnackbar('Please select a source account');
@@ -91,7 +86,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return;
     }
 
-    // Income / Expense
     if (_selectedAccountObj == null) {
       _showErrorSnackbar('Please select an account');
       return;
@@ -123,7 +117,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  //  Build
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +190,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   //  Tab Selector
-
   Widget _buildTabSelector() {
     return Container(
       height: 48,
@@ -249,7 +241,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   //  Income / Expense Fields
-
   List<Widget> _buildIncomeExpenseFields() {
     return [
       // Amount Display
@@ -300,10 +291,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   //  Transfer Fields
-
   List<Widget> _buildTransferFields() {
     return [
-      // Source Account Card
       SourceAccountCard(account: _selectedAccountObj, onTap: _pickAccount),
       const SizedBox(height: 28),
 
@@ -610,7 +599,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   //  Bottom Button
-
   Widget _buildBottomButton() {
     final isTransfer = _activeTab == _TransactionTab.transfer;
 
@@ -654,7 +642,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   //  Picker Logic
-
   Future<void> _pickDate() async {
     final picked = await showCalendarDatePicker(
       context,

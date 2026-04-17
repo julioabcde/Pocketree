@@ -68,18 +68,18 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         : TransactionType.income;
 
     context.read<RecurringBloc>().add(
-          RecurringCreateRequested(
-            accountId: _selectedAccount!.id,
-            categoryId: _selectedCategory!.id,
-            type: type,
-            amount: _amount,
-            frequency: _frequency,
-            startDate: _startDate,
-            endDate: _endDate,
-            autoCreate: _autoCreate,
-            note: _noteController.text.isEmpty ? null : _noteController.text,
-          ),
-        );
+      RecurringCreateRequested(
+        accountId: _selectedAccount!.id,
+        categoryId: _selectedCategory!.id,
+        type: type,
+        amount: _amount,
+        frequency: _frequency,
+        startDate: _startDate,
+        endDate: _endDate,
+        autoCreate: _autoCreate,
+        note: _noteController.text.isEmpty ? null : _noteController.text,
+      ),
+    );
   }
 
   @override
@@ -97,7 +97,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // App Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Row(
@@ -122,7 +121,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                 ),
               ),
 
-              // Scrollable Content
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -153,7 +151,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  //  Tab Selector 
 
   Widget _buildTabSelector() {
     return Container(
@@ -184,7 +181,9 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.brownEspresso : Colors.transparent,
+                  color: isActive
+                      ? AppColors.brownEspresso
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(22),
                 ),
                 alignment: Alignment.center,
@@ -204,7 +203,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  //  Amount Display 
 
   Widget _buildAmountDisplay() {
     return GestureDetector(
@@ -235,7 +233,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  //  Field Rows 
 
   Widget _buildCategoryRow() {
     return GestureDetector(
@@ -375,7 +372,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  //  Schedule Section 
 
   Widget _buildScheduleSection() {
     return Column(
@@ -593,7 +589,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  //  Bottom Button ─
 
   Widget _buildBottomButton() {
     return Padding(
@@ -638,7 +633,6 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     );
   }
 
-  //  Pickers 
 
   Future<void> _pickAmount() async {
     final amount = await showAmountNumpad(context, initialValue: _amount);
@@ -758,14 +752,13 @@ class _AddRecurringScreenState extends State<AddRecurringScreen> {
     }
   }
 
-  //  Helpers 
 
   String _frequencyLabel(RecurringFrequency freq) => switch (freq) {
-        RecurringFrequency.daily => 'Daily',
-        RecurringFrequency.weekly => 'Weekly',
-        RecurringFrequency.monthly => 'Monthly',
-        RecurringFrequency.yearly => 'Yearly',
-      };
+    RecurringFrequency.daily => 'Daily',
+    RecurringFrequency.weekly => 'Weekly',
+    RecurringFrequency.monthly => 'Monthly',
+    RecurringFrequency.yearly => 'Yearly',
+  };
 
   String _formatDisplayDate(DateTime date) {
     final now = DateTime.now();

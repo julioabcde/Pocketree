@@ -27,11 +27,12 @@ abstract class AppColors {
   static const Color brownDriftwood = Color(0xFF6A5C4F);
   static const Color brownMocha = Color(0xFF937D68);
 
-  // Utility
+  static const Color errorRed = Color(0xFFB3261E);
+  static const Color scaffoldBeige = Color(0xFFF5F0E8);
+
   static const Color white = Color(0xFFFFFFFF);
   static const Color frost = Color(0xFFC9FFF4);
 
-  // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,

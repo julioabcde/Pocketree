@@ -40,7 +40,6 @@ class WalletSectionDelegate extends SliverPersistentHeaderDelegate {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -86,7 +85,6 @@ class WalletSectionDelegate extends SliverPersistentHeaderDelegate {
             ),
             const SizedBox(height: 20),
 
-            // Card PageView
             SizedBox(
               height: 180,
               child: PageView.builder(
@@ -95,16 +93,23 @@ class WalletSectionDelegate extends SliverPersistentHeaderDelegate {
                 onPageChanged: onPageChanged,
                 padEnds: true,
                 itemBuilder: (context, index) {
+                  final account = accounts[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: WalletCard(account: accounts[index]),
+                    child: WalletCard(
+                      account: account,
+                      onArrowTap: () =>
+                          GoRouter.of(context).push(
+                            '/account-history',
+                            extra: account,
+                          ),
+                    ),
                   );
                 },
               ),
             ),
             const SizedBox(height: 12),
 
-            // Dot pagination
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(

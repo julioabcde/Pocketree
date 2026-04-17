@@ -23,6 +23,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     required this.deleteAccount,
   }) : super(const AccountInitial()) {
     on<AccountDataRequested>(_onDataRequested);
+    on<AccountDataRefreshed>(_onDataRefreshed);
     on<AccountCreateRequested>(_onCreateRequested);
     on<AccountUpdateRequested>(_onUpdateRequested);
     on<AccountDeleteRequested>(_onDeleteRequested);
@@ -35,7 +36,18 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     if (state is! AccountLoaded) {
       emit(const AccountLoading());
     }
+    await _loadAndEmit(emit);
+  }
 
+  Future<void> _onDataRefreshed(
+    AccountDataRefreshed event,
+    Emitter<AccountState> emit,
+  ) async {
+    await _loadAndEmit(emit);
+    if (!event.completer.isCompleted) event.completer.complete();
+  }
+
+  Future<void> _loadAndEmit(Emitter<AccountState> emit) async {
     final accountsResult = await getAccounts();
     final summaryResult = await getAccountSummary();
 

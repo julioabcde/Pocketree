@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:pocketree/features/accounts/domain/entities/account_type.dart';
 
@@ -10,6 +12,16 @@ abstract class AccountEvent extends Equatable {
 
 class AccountDataRequested extends AccountEvent {
   const AccountDataRequested();
+}
+
+class AccountDataRefreshed extends AccountEvent {
+  final Completer<void> completer;
+
+  AccountDataRefreshed({Completer<void>? completer})
+      : completer = completer ?? Completer<void>();
+
+  @override
+  List<Object?> get props => [];
 }
 
 class AccountCreateRequested extends AccountEvent {

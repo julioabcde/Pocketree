@@ -6,8 +6,9 @@ import 'package:pocketree/features/accounts/domain/entities/account_type.dart';
 
 class WalletCard extends StatelessWidget {
   final Account account;
+  final VoidCallback? onArrowTap;
 
-  const WalletCard({super.key, required this.account});
+  const WalletCard({super.key, required this.account, this.onArrowTap});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +39,6 @@ class WalletCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //  Type Label 
           Text(
             typeLabel,
             style: TextStyle(
@@ -49,7 +49,6 @@ class WalletCard extends StatelessWidget {
             ),
           ),
 
-          //  Balance 
           Text(
             CurrencyFormatter.format(account.balance),
             style: const TextStyle(
@@ -61,20 +60,23 @@ class WalletCard extends StatelessWidget {
           ),
           const Spacer(),
 
-          //  Arrow Icon 
           Align(
             alignment: Alignment.bottomRight,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColors.white.withValues(alpha: 0.8),
-                size: 18,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onArrowTap,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.white.withValues(alpha: 0.8),
+                  size: 18,
+                ),
               ),
             ),
           ),
