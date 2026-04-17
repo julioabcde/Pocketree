@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 
 abstract class CalendarEvent extends Equatable {
@@ -23,4 +25,14 @@ class CalendarDaySelected extends CalendarEvent {
 
   @override
   List<Object?> get props => [date];
+}
+
+class CalendarDataRefreshed extends CalendarEvent {
+  final Completer<void> completer;
+
+  CalendarDataRefreshed({Completer<void>? completer})
+      : completer = completer ?? Completer<void>();
+
+  @override
+  List<Object?> get props => [];
 }

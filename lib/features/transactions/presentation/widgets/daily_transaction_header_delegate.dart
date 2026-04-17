@@ -69,6 +69,5 @@ class DailyTransactionHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   String _formatDate(DateTime date) {
     return DateFormat('EEE, d MMM').format(date);
-    // Output: "Mon, 23 Mar"
   }
 }

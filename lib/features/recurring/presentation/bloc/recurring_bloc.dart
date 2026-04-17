@@ -23,6 +23,7 @@ class RecurringBloc extends Bloc<RecurringEvent, RecurringState> {
     required this.executeRecurring,
   }) : super(const RecurringInitial()) {
     on<RecurringDataRequested>(_onDataRequested);
+    on<RecurringDataRefreshed>(_onDataRefreshed);
     on<RecurringDeleteRequested>(_onDeleteRequested);
     on<RecurringCreateRequested>(_onCreateRequested);
     on<RecurringExecuteRequested>(_onExecuteRequested);
@@ -35,7 +36,18 @@ class RecurringBloc extends Bloc<RecurringEvent, RecurringState> {
     Emitter<RecurringState> emit,
   ) async {
     if (state is! RecurringLoaded) emit(const RecurringLoading());
+    await _loadAndEmit(emit);
+  }
 
+  Future<void> _onDataRefreshed(
+    RecurringDataRefreshed event,
+    Emitter<RecurringState> emit,
+  ) async {
+    await _loadAndEmit(emit);
+    if (!event.completer.isCompleted) event.completer.complete();
+  }
+
+  Future<void> _loadAndEmit(Emitter<RecurringState> emit) async {
     final result = await getRecurring();
     result.fold(
       (failure) => emit(RecurringError(_mapFailure(failure))),

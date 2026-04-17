@@ -9,7 +9,6 @@ import 'package:pocketree/features/recurring/presentation/bloc/recurring_bloc.da
 import 'package:pocketree/features/recurring/presentation/bloc/recurring_event.dart';
 import 'package:pocketree/features/recurring/presentation/bloc/recurring_state.dart';
 
-//  Frequency colour palette 
 ({Color bg, Color icon}) _frequencyColors(RecurringFrequency frequency) =>
     switch (frequency) {
       RecurringFrequency.daily =>
@@ -31,7 +30,6 @@ import 'package:pocketree/features/recurring/presentation/bloc/recurring_state.d
   return _frequencyColors(item.frequency);
 }
 
-//  Main widget ─
 class SubscriptionsTabView extends StatelessWidget {
   const SubscriptionsTabView({super.key});
 
@@ -108,7 +106,6 @@ class SubscriptionsTabView extends StatelessWidget {
   }
 }
 
-//  Content 
 class _SubscriptionsContent extends StatelessWidget {
   final RecurringLoaded state;
 
@@ -119,24 +116,31 @@ class _SubscriptionsContent extends StatelessWidget {
     final bloc = context.read<RecurringBloc>();
     final sorted = state.sorted;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-      children: [
-        //  Monthly Commitment Summary 
+    return RefreshIndicator(
+      color: AppColors.primaryForest,
+      backgroundColor: AppColors.white,
+      onRefresh: () {
+        final event = RecurringDataRefreshed();
+        context.read<RecurringBloc>().add(event);
+        return event.completer.future;
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+        children: [
         _RecurringSummaryHeader(state: state),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         Divider(
-          color: AppColors.neutralTaupe.withValues(alpha: 0.3),
+          height: 1,
           thickness: 1,
+          color: AppColors.neutralTaupe.withValues(alpha: 0.3),
         ),
         const SizedBox(height: 16),
 
-        //  Frequency Legend 
         const _FrequencyLegend(),
         const SizedBox(height: 20),
 
-        //  Active Subscriptions Section 
         if (sorted.isEmpty)
           _buildEmpty()
         else ...[
@@ -163,6 +167,7 @@ class _SubscriptionsContent extends StatelessWidget {
           ),
         ],
       ],
+      ),
     );
   }
 
@@ -249,7 +254,6 @@ class _SubscriptionsContent extends StatelessWidget {
   }
 }
 
-//  Summary Header (3 columns) 
 class _RecurringSummaryHeader extends StatelessWidget {
   final RecurringLoaded state;
 
@@ -308,7 +312,6 @@ class _RecurringSummaryHeader extends StatelessWidget {
   }
 }
 
-//  Frequency Legend ─
 class _FrequencyLegend extends StatelessWidget {
   const _FrequencyLegend();
 
@@ -355,7 +358,6 @@ class _FrequencyLegend extends StatelessWidget {
   }
 }
 
-//  List Item 
 class _SubscriptionListItem extends StatelessWidget {
   final RecurringTransaction item;
   final VoidCallback onDeactivate;
@@ -391,7 +393,6 @@ class _SubscriptionListItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Row(
               children: [
-                //  Frequency-coloured icon 
                 Container(
                   width: 44,
                   height: 44,
@@ -407,7 +408,6 @@ class _SubscriptionListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 14),
 
-                //  Name + subtitle 
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,7 +439,6 @@ class _SubscriptionListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
 
-                //  Amount + badge 
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -481,7 +480,6 @@ class _SubscriptionListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
 
-                //  Three-dot menu 
                 GestureDetector(
                   onTap: () => _showOptions(context),
                   child: const Padding(
@@ -608,7 +606,6 @@ class _SubscriptionListItem extends StatelessWidget {
   }
 }
 
-//  Edit Sheet 
 class _EditRecurringSheet extends StatefulWidget {
   final RecurringTransaction item;
   final RecurringBloc bloc;
@@ -673,7 +670,6 @@ class _EditRecurringSheetState extends State<_EditRecurringSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Note field
           const Text(
             'Catatan',
             style: TextStyle(
@@ -699,7 +695,6 @@ class _EditRecurringSheetState extends State<_EditRecurringSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Amount field
           const Text(
             'Jumlah',
             style: TextStyle(

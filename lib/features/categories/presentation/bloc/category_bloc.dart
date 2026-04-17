@@ -21,6 +21,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     required this.deleteCategory,
   }) : super(const CategoryInitial()) {
     on<CategoryDataRequested>(_onDataRequested);
+    on<CategoryDataRefreshed>(_onDataRefreshed);
     on<CategoryCreateRequested>(_onCreateRequested);
     on<CategoryUpdateRequested>(_onUpdateRequested);
     on<CategoryDeleteRequested>(_onDeleteRequested);
@@ -33,14 +34,28 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     if (state is! CategoryLoaded) {
       emit(const CategoryLoading());
     }
+    await _loadAndEmit(emit, event.type);
+  }
 
-    final result = await getCategories(type: event.type);
+  Future<void> _onDataRefreshed(
+    CategoryDataRefreshed event,
+    Emitter<CategoryState> emit,
+  ) async {
+    await _loadAndEmit(emit, event.type);
+    if (!event.completer.isCompleted) event.completer.complete();
+  }
+
+  Future<void> _loadAndEmit(
+    Emitter<CategoryState> emit,
+    CategoryType? type,
+  ) async {
+    final result = await getCategories(type: type);
 
     result.fold(
       (failure) => emit(CategoryError(_mapFailureToMessage(failure))),
       (categories) => emit(CategoryLoaded(
         categories: categories,
-        activeFilter: event.type,
+        activeFilter: type,
       )),
     );
   }

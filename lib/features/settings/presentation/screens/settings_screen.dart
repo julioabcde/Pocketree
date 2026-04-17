@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:pocketree/features/auth/presentation/bloc/auth_event.dart';
@@ -15,7 +16,6 @@ class SettingsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
-            // Title
             const Text(
               'Settings',
               style: TextStyle(
@@ -27,7 +27,6 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Profile Card
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
                 final user = state is AuthAuthenticated ? state.user : null;
@@ -44,7 +43,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Avatar
                       Container(
                         width: 50,
                         height: 50,
@@ -67,7 +65,6 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 16),
 
-                      // Name + Email
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +95,6 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // General Section
             const Text(
               'GENERAL',
               style: TextStyle(
@@ -110,6 +106,11 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
+            _buildSettingsItem(
+              icon: Icons.category_outlined,
+              label: 'Manage Categories',
+              onTap: () => GoRouter.of(context).push('/category-management'),
+            ),
             _buildSettingsItem(
               icon: Icons.lock_outline_rounded,
               label: 'Change Password',
@@ -128,7 +129,6 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Logout
             _buildSettingsItem(
               icon: Icons.logout_rounded,
               label: 'Logout',
@@ -138,7 +138,6 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // Version
             Center(
               child: Text(
                 'Pocketree v0.1.0',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pocketree/core/di/injection_container.dart';
 import 'package:pocketree/core/theme/app_colors.dart';
 import 'package:pocketree/features/categories/domain/entities/category.dart';
@@ -57,13 +58,11 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
       });
 
       if (parents.isNotEmpty) {
-        // If a category was previously selected, find its parent
         if (widget.selected != null) {
           final parentId = widget.selected!.parentId ?? widget.selected!.id;
           final matchingParent = parents.where((p) => p.id == parentId);
           if (matchingParent.isNotEmpty) {
             _selectParent(matchingParent.first);
-            // Pre-select the subcategory
             if (widget.selected!.parentId != null) {
               _selectedCategory = widget.selected;
             }
@@ -94,7 +93,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
   }
 
   void _confirm() {
-    // Return selected subcategory, or selected parent if no sub selected
     final result = _selectedCategory ?? _selectedParent;
     Navigator.pop(context, result);
   }
@@ -109,7 +107,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
       builder: (context, scrollController) {
         return Column(
           children: [
-            //  Header 
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 12, 0),
               child: Row(
@@ -130,8 +127,15 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                       size: 20,
                       color: AppColors.primaryForest,
                     ),
-                    onPressed: () {
-                      // TODO: Navigate to category management
+                    onPressed: () async {
+                      await GoRouter.of(context).push('/category-management');
+                      if (mounted) {
+                        setState(() {
+                          _isLoadingParents = true;
+                          _selectedCategory = null;
+                        });
+                        _fetchParents();
+                      }
                     },
                   ),
                   IconButton(
@@ -146,7 +150,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
               ),
             ),
 
-            //  Scrollable Content 
             Expanded(
               child: _isLoadingParents
                   ? const Center(
@@ -158,7 +161,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                       controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                       children: [
-                        //  Parent Grid 
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -228,7 +230,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                         ),
                         const SizedBox(height: 20),
 
-                        //  Subcategories Card 
                         if (_isLoadingSubcategories)
                           const Padding(
                             padding: EdgeInsets.all(24),
@@ -335,7 +336,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                     ),
             ),
 
-            //  Confirm Button 
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
               child: SafeArea(

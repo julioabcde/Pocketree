@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_filter.dart';
 import 'package:pocketree/features/transactions/domain/entities/transaction_type.dart';
@@ -13,6 +15,17 @@ class TransactionDataRequested extends TransactionEvent {
   final TransactionFilter filter;
 
   const TransactionDataRequested({this.filter = const TransactionFilter()});
+
+  @override
+  List<Object?> get props => [filter];
+}
+
+class TransactionDataRefreshed extends TransactionEvent {
+  final TransactionFilter? filter;
+  final Completer<void> completer;
+
+  TransactionDataRefreshed({this.filter, Completer<void>? completer})
+      : completer = completer ?? Completer<void>();
 
   @override
   List<Object?> get props => [filter];

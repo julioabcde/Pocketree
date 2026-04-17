@@ -24,33 +24,52 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   }) : super(const CalendarInitial()) {
     on<CalendarMonthRequested>(_onMonthRequested);
     on<CalendarDaySelected>(_onDaySelected);
+    on<CalendarDataRefreshed>(_onDataRefreshed);
   }
 
-  //  Month Load 
 
   Future<void> _onMonthRequested(
     CalendarMonthRequested event,
     Emitter<CalendarState> emit,
   ) async {
     emit(const CalendarLoading());
+    await _loadMonthAndDay(
+      emit: emit,
+      month: event.month,
+      selectedDate: null,
+    );
+  }
 
-    final monthStr = _monthFormat.format(event.month);
+  Future<void> _onDataRefreshed(
+    CalendarDataRefreshed event,
+    Emitter<CalendarState> emit,
+  ) async {
+    final current = state;
+    final month = current is CalendarLoaded ? current.currentMonth : DateTime.now();
+    final selected = current is CalendarLoaded ? current.selectedDate : null;
+    await _loadMonthAndDay(emit: emit, month: month, selectedDate: selected);
+    if (!event.completer.isCompleted) event.completer.complete();
+  }
 
-    // Build filter for the full month's summary
-    final monthStart = DateTime(event.month.year, event.month.month, 1);
-    final monthEnd = DateTime(event.month.year, event.month.month + 1, 0);
+  Future<void> _loadMonthAndDay({
+    required Emitter<CalendarState> emit,
+    required DateTime month,
+    required DateTime? selectedDate,
+  }) async {
+    final monthStr = _monthFormat.format(month);
+
+    final monthStart = DateTime(month.year, month.month, 1);
+    final monthEnd = DateTime(month.year, month.month + 1, 0);
     final monthFilter = TransactionFilter(
       startDate: monthStart,
       endDate: monthEnd,
     );
 
-    // Parallel fetch: daily breakdown + month totals
     final (dailyResult, summaryResult) = await (
       getDailySummary(month: monthStr),
       getTransactionSummary(filter: monthFilter),
     ).wait;
 
-    // Handle failures
     final dailySummaries = dailyResult.fold(
       (failure) => null,
       (list) => _toSparseMap(list),
@@ -67,18 +86,16 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
       return;
     }
 
-    // Determine default selected day
     final now = DateTime.now();
-    final isCurrentMonth =
-        event.month.year == now.year && event.month.month == now.month;
-    final selectedDate = isCurrentMonth
-        ? DateTime(now.year, now.month, now.day)
-        : monthStart;
+    final isCurrentMonth = month.year == now.year && month.month == now.month;
+    final resolvedSelected = selectedDate ??
+        (isCurrentMonth
+            ? DateTime(now.year, now.month, now.day)
+            : monthStart);
 
-    // Fetch selected day's transactions
     final dayFilter = TransactionFilter(
-      startDate: selectedDate,
-      endDate: selectedDate,
+      startDate: resolvedSelected,
+      endDate: resolvedSelected,
     );
     final dayResult = await getTransactions(filter: dayFilter);
     final dayTransactions = dayResult.fold((_) => <dynamic>[], (list) => list);
@@ -87,12 +104,11 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
       currentMonth: monthStart,
       dailySummaries: dailySummaries,
       monthlySummary: monthlySummary,
-      selectedDate: selectedDate,
+      selectedDate: resolvedSelected,
       selectedDayTransactions: List.unmodifiable(dayTransactions),
     ));
   }
 
-  //  Day Selection 
 
   Future<void> _onDaySelected(
     CalendarDaySelected event,
@@ -101,7 +117,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final current = state;
     if (current is! CalendarLoaded) return;
 
-    // Immediately update selected date + show day loading
     emit(current.copyWith(
       selectedDate: event.date,
       isLoadingDay: true,
@@ -114,7 +129,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final result = await getTransactions(filter: dayFilter);
     final transactions = result.fold((_) => <dynamic>[], (list) => list);
 
-    // Guard: state might have changed while awaiting
     if (state is! CalendarLoaded) return;
 
     emit((state as CalendarLoaded).copyWith(
@@ -123,9 +137,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     ));
   }
 
-  //  Helpers 
 
-  /// Converts the sparse API list into a day-number-keyed map for O(1) lookup.
   Map<int, DailySummary> _toSparseMap(List<DailySummary> list) {
     return {for (final ds in list) ds.date.day: ds};
   }

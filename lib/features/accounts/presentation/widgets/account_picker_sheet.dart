@@ -6,11 +6,6 @@ import 'package:pocketree/features/accounts/domain/entities/account.dart';
 import 'package:pocketree/features/accounts/domain/entities/account_type.dart';
 import 'package:pocketree/features/accounts/domain/usecases/get_accounts_usecase.dart';
 
-/// Shows an account picker bottom sheet.
-///
-/// Returns the selected [Account], or `null` if dismissed.
-/// Pass [excludeId] to hide a specific account (e.g., the "from" account
-/// when picking the "to" account in a transfer).
 Future<Account?> showAccountPicker(
   BuildContext context, {
   Account? selected,
@@ -69,7 +64,6 @@ class _AccountPickerSheetState extends State<_AccountPickerSheet> {
     Navigator.pop(context, _selectedAccount);
   }
 
-  /// Groups accounts by type for display sections.
   Map<AccountType, List<Account>> get _groupedAccounts {
     final map = <AccountType, List<Account>>{};
     for (final account in _accounts) {

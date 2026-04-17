@@ -87,12 +87,12 @@ class RecurringRemoteDatasourceImpl implements RecurringRemoteDatasource {
         'start_date': startDate,
         'timezone': timezone,
         'auto_create': autoCreate,
-        if (categoryId != null) 'category_id': categoryId,
-        if (endDate != null) 'end_date': endDate,
-        if (note != null) 'note': note,
-        if (dayOfWeek != null) 'day_of_week': dayOfWeek,
-        if (dayOfMonth != null) 'day_of_month': dayOfMonth,
-        if (monthOfYear != null) 'month_of_year': monthOfYear,
+        'category_id': ?categoryId,
+        'end_date': ?endDate,
+        'note': ?note,
+        'day_of_week': ?dayOfWeek,
+        'day_of_month': ?dayOfMonth,
+        'month_of_year': ?monthOfYear,
       };
       final response = await dio.post('/recurring', data: body);
       return RecurringTransactionModel.fromJson(
@@ -117,14 +117,14 @@ class RecurringRemoteDatasourceImpl implements RecurringRemoteDatasource {
   }) async {
     try {
       final body = {
-        if (categoryId != null) 'category_id': categoryId,
-        if (amount != null) 'amount': amount,
-        if (endDate != null) 'end_date': endDate,
-        if (timezone != null) 'timezone': timezone,
-        if (autoCreate != null) 'auto_create': autoCreate,
-        if (maxOccurrences != null) 'max_occurrences': maxOccurrences,
-        if (isActive != null) 'is_active': isActive,
-        if (note != null) 'note': note,
+        'category_id': ?categoryId,
+        'amount': ?amount,
+        'end_date': ?endDate,
+        'timezone': ?timezone,
+        'auto_create': ?autoCreate,
+        'max_occurrences': ?maxOccurrences,
+        'is_active': ?isActive,
+        'note': ?note,
       };
       final response = await dio.put('/recurring/$recurringId', data: body);
       return RecurringTransactionModel.fromJson(
